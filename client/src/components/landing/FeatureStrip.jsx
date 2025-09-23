@@ -1,4 +1,4 @@
-import InfoCard from "./InfoCard";
+import InfoCard from "../ui/InfoCard";
 
 export default function FeatureStrip({
   id = "features",

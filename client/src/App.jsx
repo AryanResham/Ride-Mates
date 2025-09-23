@@ -1,13 +1,13 @@
-import Footer from "./components/Footer";
-import Header from "./components/Header";
-import Hero from "./components/Hero";
-import Hero2 from "./components/Hero2";
+import Footer from "./components/landing/Footer";
+import Header from "./components/landing/Header";
+import Hero from "./components/landing/Hero";
+import Hero2 from "./components/landing/Hero2";
 import FeatureStrip from "./components/FeatureStrip";
 import HowItWorks from "./components/HowItWorks";
-import WhyChoose from "./components/WhyChoose";
+import WhyChoose from "./components/landing/WhyChoose";
 import { useState } from "react";
-import LoginModal from "./components/LoginModal";
-import SignupModal from "./components/SignupModal";
+import LoginModal from "./components/landing/LoginModal";
+import SignupModal from "./components/landing/SignupModal";
 
 function App() {
   const [loginOpen, setLoginOpen] = useState(false);

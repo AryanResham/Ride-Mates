@@ -1,4 +1,4 @@
-import StepsCard from "./StepsCard";
+import StepsCard from "../ui/StepsCard";
 
 export default function HowItWorks({
   id = "how-it-works",

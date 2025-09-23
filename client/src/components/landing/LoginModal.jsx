@@ -1,4 +1,4 @@
-import Modal from "./Modal";
+import Modal from "../ui/Modal";
 
 export default function LoginModal({ open, onClose }) {
   const titleId = "login-modal-title";
