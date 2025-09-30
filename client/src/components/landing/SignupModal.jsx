@@ -1,5 +1,7 @@
+// src/components/modals/SignupModal.jsx
 import { useState } from "react";
 import Modal from "../ui/Modal";
+import { useAuth } from "../../contexts/AuthContext";
 
 const ROLES = [
   { key: "passenger", label: "Find rides as a passenger", icon: "🧑‍✈️" },
@@ -7,14 +9,78 @@ const ROLES = [
   { key: "both", label: "Both driver and passenger", icon: "🔁" },
 ];
 
-export default function SignupModal({ open, onClose }) {
+export default function SignupModal({ open, onClose, onNavigate }) {
   const titleId = "signup-modal-title";
   const [role, setRole] = useState("both");
   const isActive = (k) => role === k;
 
+  const { signup, authLoading, getIdTokenForBackend } = useAuth();
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
+    if (!agreed) {
+      setError("You must accept the Terms of Service and Privacy Policy.");
+      return;
+    }
+    try {
+      const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      await signup(email, password, displayName);
+
+      // OPTIONAL: send user metadata (role, phone) to your backend
+      // If you have a backend later, get ID token and use it to call /api/users (example)
+      // const token = await getIdTokenForBackend();
+      // await fetch('/api/users', {
+      //   method: 'POST',
+      //   headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ role, phone }),
+      // });
+
+      // reset & close
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setAgreed(false);
+      onClose();
+      
+      // Navigate based on role selection
+      if (onNavigate) {
+        if (role === "driver") {
+          onNavigate("driver");
+        } else if (role === "passenger") {
+          onNavigate("passenger");
+        } else {
+          // Default to passenger for "both" role
+          onNavigate("passenger");
+        }
+      }
+    } catch (err) {
+      const code = err?.code || err?.message || "";
+      if (code.includes("auth/email-already-in-use")) {
+        setError("That email is already registered.");
+      } else if (code.includes("auth/invalid-email")) {
+        setError("Invalid email address.");
+      } else if (code.includes("auth/weak-password")) {
+        setError("Choose a stronger password (6+ characters).");
+      } else {
+        setError("Failed to create account. Please try again.");
+      }
+    }
+  }
+
   return (
     <Modal open={open} onClose={onClose} labelledBy={titleId}>
-      <div className="rounded-2xl bg-white p-6 shadow-xl">
+      <div className="rounded-2xl bg-white p-6 shadow-xl relative">
         {/* Brand mark */}
         <div className="text-sm font-semibold mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-300 ring-1 ring-yellow-400/60">
           RM
@@ -29,7 +95,13 @@ export default function SignupModal({ open, onClose }) {
           Create your account and start sharing rides
         </p>
 
-        <form className="mt-5 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          {error && (
+            <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
           {/* Role selection */}
           <div>
             <label className="text-sm font-medium text-slate-800">
@@ -68,6 +140,9 @@ export default function SignupModal({ open, onClose }) {
                   type="text"
                   placeholder="John"
                   className="w-full bg-transparent text-sm outline-none"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
                 />
               </div>
             </div>
@@ -80,6 +155,8 @@ export default function SignupModal({ open, onClose }) {
                   type="text"
                   placeholder="Doe"
                   className="w-full bg-transparent text-sm outline-none"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                 />
               </div>
             </div>
@@ -93,6 +170,9 @@ export default function SignupModal({ open, onClose }) {
                 type="email"
                 placeholder="john@example.com"
                 className="w-full bg-transparent text-sm outline-none"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
             </div>
           </div>
@@ -107,6 +187,8 @@ export default function SignupModal({ open, onClose }) {
                 type="tel"
                 placeholder="+1 (555) 123-4567"
                 className="w-full bg-transparent text-sm outline-none"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
               />
             </div>
           </div>
@@ -121,6 +203,10 @@ export default function SignupModal({ open, onClose }) {
                 type="password"
                 placeholder="Create a strong password"
                 className="w-full bg-transparent text-sm outline-none"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
               />
             </div>
           </div>
@@ -129,6 +215,8 @@ export default function SignupModal({ open, onClose }) {
           <label className="mt-2 flex items-start gap-2 text-sm text-slate-700">
             <input
               type="checkbox"
+              checked={agreed}
+              onChange={(e) => setAgreed(e.target.checked)}
               className="mt-1 h-4 w-4 rounded border-slate-300"
             />
             <span>
@@ -146,9 +234,10 @@ export default function SignupModal({ open, onClose }) {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-slate-900 border border-yellow-500/60 hover:bg-yellow-300"
+            disabled={authLoading}
+            className="w-full rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-slate-900 border border-yellow-500/60 hover:bg-yellow-300 disabled:opacity-60"
           >
-            Create Account
+            {authLoading ? "Creating account..." : "Create Account"}
           </button>
         </form>
 

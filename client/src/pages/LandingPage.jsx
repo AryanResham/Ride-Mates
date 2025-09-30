@@ -10,7 +10,7 @@ import WhyChoose from "../components/landing/WhyChoose";
 import LoginModal from "../components/landing/LoginModal";
 import SignupModal from "../components/landing/SignupModal";
 
-function LandingPage() {
+function LandingPage({ onNavigate }) {
   const [loginOpen, setLoginOpen] = useState(false);
   const [signupOpen, setSignupOpen] = useState(false);
   return (
@@ -28,7 +28,7 @@ function LandingPage() {
       <div className="fixed bottom-4 right-4 flex gap-2"></div>
 
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
-      <SignupModal open={signupOpen} onClose={() => setSignupOpen(false)} />
+      <SignupModal open={signupOpen} onClose={() => setSignupOpen(false)} onNavigate={onNavigate} />
     </div>
   );
 }

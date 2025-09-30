@@ -1,28 +1,34 @@
 import { Car, IndianRupee } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function UserProfileCard({
-  name = "John Doe",
-  role = "Professional Driver",
+  name,
+  role = "Ride Mate User",
   rating = 4.8,
-  ridesCount = 23,
-  earnings = 2840,
-  completionRate = 98,
-  avatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop",
+  ridesCount = 0,
+  earnings = 0,
+  completionRate = 100,
+  avatarUrl,
 }) {
+  const { user } = useAuth();
+  
+  // Use auth user data if available, otherwise use props
+  const displayName = name || user?.displayName || user?.email?.split('@')[0] || "User";
+  const displayAvatar = avatarUrl || user?.photoURL || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop";
   return (
     <aside className="w-full max-w-xs bg-white rounded-lg shadow-sm border border-gray-100 p-6">
       {/* Avatar */}
       <div className="flex flex-col items-center text-center">
         <div className="w-24 h-24 rounded-full ring-4 ring-gray-100 overflow-hidden">
           <img
-            src={avatarUrl}
-            alt={name}
+            src={displayAvatar}
+            alt={displayName}
             className="w-full h-full object-cover"
           />
         </div>
 
         {/* Name */}
-        <h3 className="mt-4 text-xl font-semibold text-gray-900">{name}</h3>
+        <h3 className="mt-4 text-xl font-semibold text-gray-900">{displayName}</h3>
 
         {/* Role */}
         <p className="mt-1 text-gray-500">{role}</p>
