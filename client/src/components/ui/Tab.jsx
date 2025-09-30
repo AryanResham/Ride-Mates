@@ -1,4 +1,4 @@
-function Tab({ label, active, onClick, highlight = false }) {
+function Tab({ label, active, onClick }) {
   return (
     <button
       type="button"
@@ -6,8 +6,8 @@ function Tab({ label, active, onClick, highlight = false }) {
       aria-selected={active}
       className={[
         "px-5 py-2 rounded-lg text-sm font-medium border shadow-sm w-full",
-        active && highlight
-          ? "bg-yellow-400 text-gray-900 border-yellow-300"
+        active
+          ? "bg-yellow-400 text-gray-900 border-yellow-400"
           : active
           ? "bg-white text-gray-900 border-gray-200"
           : "bg-white text-gray-500 border-transparent",
