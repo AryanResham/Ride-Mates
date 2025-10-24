@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema(
+const driverSchema = new mongoose.Schema(
     {
         firebaseUid: {
             type: String,
@@ -28,24 +28,11 @@ const userSchema = new mongoose.Schema(
         },
         phone: {
             type: String,
+            required: true,
             trim: true,
         },
 
         // Profile Information
-        role: {
-            passenger: {
-                type: Boolean,
-                default: true
-            },
-            driver: {
-                type: Boolean,
-                default: false
-            },
-            admin: {
-                type: Boolean,
-                default: false
-            }
-        },
         avatar: {
             type: String,
             default: null,
@@ -55,15 +42,43 @@ const userSchema = new mongoose.Schema(
         vehicle: {
             model: {
                 type: String,
+                required: true,
                 trim: true,
             },
             plateNumber: {
                 type: String,
+                required: true,
                 trim: true,
+                unique: true,
             },
             color: {
                 type: String,
+                required: true,
                 trim: true,
+            },
+            capacity: {
+                type: Number,
+                required: true,
+                min: 1,
+                max: 8,
+            },
+        },
+
+        // License Information
+        license: {
+            number: {
+                type: String,
+                required: true,
+                trim: true,
+                unique: true,
+            },
+            expiryDate: {
+                type: Date,
+                required: true,
+            },
+            verified: {
+                type: Boolean,
+                default: false,
             },
         },
 
@@ -91,23 +106,7 @@ const userSchema = new mongoose.Schema(
                 type: Number,
                 default: 0,
             },
-            totalRidesAsDriver: {
-                type: Number,
-                default: 0,
-            },
-            totalRidesAsPassenger: {
-                type: Number,
-                default: 0,
-            },
             totalEarnings: {
-                type: Number,
-                default: 0,
-            },
-            totalSpent: {
-                type: Number,
-                default: 0,
-            },
-            moneySaved: {
                 type: Number,
                 default: 0,
             },
@@ -116,6 +115,10 @@ const userSchema = new mongoose.Schema(
                 default: 100,
                 min: 0,
                 max: 100,
+            },
+            totalDistance: {
+                type: Number,
+                default: 0,
             },
         },
 
@@ -128,7 +131,7 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
-        isDriver: {
+        isApproved: {
             type: Boolean,
             default: false,
         },
@@ -144,6 +147,24 @@ const userSchema = new mongoose.Schema(
                 type: Boolean,
                 default: false,
             },
+            ridePreferences: {
+                allowSmoking: { type: Boolean, default: false },
+                allowPets: { type: Boolean, default: false },
+                allowMusic: { type: Boolean, default: true },
+                baggageAllowed: { type: Boolean, default: true },
+            },
+        },
+
+        // Availability
+        availability: {
+            isAvailable: {
+                type: Boolean,
+                default: true,
+            },
+            lastActive: {
+                type: Date,
+                default: Date.now,
+            },
         },
     },
     {
@@ -154,20 +175,30 @@ const userSchema = new mongoose.Schema(
 );
 
 // Indexes for better query performance
-userSchema.index({ email: 1 });
-userSchema.index({ firebaseUid: 1 });
-userSchema.index({ 'rating.average': -1 });
+driverSchema.index({ email: 1 });
+driverSchema.index({ firebaseUid: 1 });
+driverSchema.index({ 'rating.average': -1 });
+driverSchema.index({ 'vehicle.plateNumber': 1 });
+driverSchema.index({ 'license.number': 1 });
 
 // Virtual for full vehicle info
-userSchema.virtual('vehicleInfo').get(function () {
+driverSchema.virtual('vehicleInfo').get(function () {
     if (this.vehicle && this.vehicle.model) {
-        return `${this.vehicle.model} (${this.vehicle.plateNumber})`;
+        return `${this.vehicle.color} ${this.vehicle.model} (${this.vehicle.plateNumber})`;
     }
     return null;
 });
 
+// Virtual to check if license is valid
+driverSchema.virtual('isLicenseValid').get(function () {
+    if (this.license && this.license.expiryDate) {
+        return new Date(this.license.expiryDate) > new Date();
+    }
+    return false;
+});
+
 // Method to update rating
-userSchema.methods.updateRating = function (newRating) {
+driverSchema.methods.updateRating = function (newRating) {
     this.rating.total += newRating;
     this.rating.count += 1;
     this.rating.average = this.rating.total / this.rating.count;
@@ -175,16 +206,30 @@ userSchema.methods.updateRating = function (newRating) {
 };
 
 // Method to increment ride count
-userSchema.methods.incrementRideCount = function (asDriver = false) {
+driverSchema.methods.incrementRideCount = function () {
     this.stats.totalRides += 1;
-    if (asDriver) {
-        this.stats.totalRidesAsDriver += 1;
-    } else {
-        this.stats.totalRidesAsPassenger += 1;
-    }
     return this.save();
 };
 
-const User = mongoose.model('User', userSchema);
+// Method to update earnings
+driverSchema.methods.updateEarnings = function (amount) {
+    this.stats.totalEarnings += amount;
+    return this.save();
+};
 
-module.exports = User;
+// Method to update distance
+driverSchema.methods.updateDistance = function (distance) {
+    this.stats.totalDistance += distance;
+    return this.save();
+};
+
+// Method to update availability
+driverSchema.methods.updateAvailability = function (isAvailable) {
+    this.availability.isAvailable = isAvailable;
+    this.availability.lastActive = new Date();
+    return this.save();
+};
+
+const Driver = mongoose.model('Driver', driverSchema);
+
+module.exports = Driver;

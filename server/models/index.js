@@ -1,6 +1,7 @@
 // Central export file for all models
 
-const User = require('./User');
+const Passenger = require('./Passenger');
+const Driver = require('./Driver');
 const Ride = require('./Ride');
 const Booking = require('./Booking');
 const Request = require('./Request');
@@ -9,7 +10,8 @@ const Notification = require('./Notification');
 const Message = require('./Message');
 
 module.exports = {
-    User,
+    Passenger,
+    Driver,
     Ride,
     Booking,
     Request,

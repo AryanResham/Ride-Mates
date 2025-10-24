@@ -5,7 +5,7 @@ const rideSchema = new mongoose.Schema(
         // Driver Information
         driver: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+            ref: 'Driver',
             required: true,
             index: true,
         },
@@ -161,7 +161,7 @@ const rideSchema = new mongoose.Schema(
         },
         cancelledBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+            ref: 'Driver',
         },
     },
     {

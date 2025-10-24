@@ -12,13 +12,13 @@ const requestSchema = new mongoose.Schema(
         },
         passenger: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+            ref: 'Passenger',
             required: true,
             index: true,
         },
         driver: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
+            ref: 'Driver',
             required: true,
             index: true,
         },
