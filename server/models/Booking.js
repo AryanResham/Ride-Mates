@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 // Booking made by passengers for rides
 const bookingSchema = new mongoose.Schema(
     {
@@ -11,13 +11,13 @@ const bookingSchema = new mongoose.Schema(
         },
         passenger: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Passenger',
+            ref: 'User',
             required: true,
             index: true,
         },
         driver: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Driver',
+            ref: 'User',
             required: true,
         },
 
@@ -228,4 +228,4 @@ bookingSchema.statics.getPendingCountForDriver = function (driverId) {
 
 const Booking = mongoose.model('Booking', bookingSchema);
 
-module.exports = Booking;
+export default Booking;

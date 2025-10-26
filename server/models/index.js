@@ -1,15 +1,15 @@
-// Central export file for all models
+import User from './User.js';
+import Passenger from './Passenger.js';
+import Driver from './Driver.js';
+import Ride from './Ride.js';
+import Booking from './Booking.js';
+import Request from './Request.js';
+import Rating from './Rating.js';
+import Notification from './Notification.js';
+import Message from './Message.js';
 
-const Passenger = require('./Passenger');
-const Driver = require('./Driver');
-const Ride = require('./Ride');
-const Booking = require('./Booking');
-const Request = require('./Request');
-const Rating = require('./Rating');
-const Notification = require('./Notification');
-const Message = require('./Message');
-
-module.exports = {
+export {
+    User,
     Passenger,
     Driver,
     Ride,

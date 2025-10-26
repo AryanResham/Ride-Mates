@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const messageSchema = new mongoose.Schema(
     {
@@ -208,4 +208,4 @@ messageSchema.statics.getUserConversations = async function (userId) {
 
 const Message = mongoose.model('Message', messageSchema);
 
-module.exports = Message;
+export default Message;

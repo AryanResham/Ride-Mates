@@ -1,11 +1,11 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 // Driver offers a ride to passengers
 const rideSchema = new mongoose.Schema(
     {
         // Driver Information
         driver: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Driver',
+            ref: 'User',
             required: true,
             index: true,
         },
@@ -161,7 +161,7 @@ const rideSchema = new mongoose.Schema(
         },
         cancelledBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Driver',
+            ref: 'User',
         },
     },
     {
@@ -228,4 +228,4 @@ rideSchema.pre('save', function (next) {
 
 const Ride = mongoose.model('Ride', rideSchema);
 
-module.exports = Ride;
+export default Ride;

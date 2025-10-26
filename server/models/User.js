@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const passengerSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
     {
         firebaseUid: {
             type: String,
@@ -32,9 +32,39 @@ const passengerSchema = new mongoose.Schema(
         },
 
         // Profile Information
+        role: {
+            passenger: {
+                type: Boolean,
+                default: true
+            },
+            driver: {
+                type: Boolean,
+                default: false
+            },
+            admin: {
+                type: Boolean,
+                default: false
+            }
+        },
         avatar: {
             type: String,
             default: null,
+        },
+
+        // Driver Specific Information
+        vehicle: {
+            model: {
+                type: String,
+                trim: true,
+            },
+            plateNumber: {
+                type: String,
+                trim: true,
+            },
+            color: {
+                type: String,
+                trim: true,
+            },
         },
 
         // Rating and Statistics
@@ -58,6 +88,18 @@ const passengerSchema = new mongoose.Schema(
         // Statistics
         stats: {
             totalRides: {
+                type: Number,
+                default: 0,
+            },
+            totalRidesAsDriver: {
+                type: Number,
+                default: 0,
+            },
+            totalRidesAsPassenger: {
+                type: Number,
+                default: 0,
+            },
+            totalEarnings: {
                 type: Number,
                 default: 0,
             },
@@ -86,6 +128,10 @@ const passengerSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        isDriver: {
+            type: Boolean,
+            default: false,
+        },
 
         // Preferences
         preferences: {
@@ -94,10 +140,9 @@ const passengerSchema = new mongoose.Schema(
                 sms: { type: Boolean, default: false },
                 push: { type: Boolean, default: true },
             },
-            ridePreferences: {
-                allowSmoking: { type: Boolean, default: false },
-                allowPets: { type: Boolean, default: false },
-                preferMusic: { type: Boolean, default: true },
+            autoAcceptRequests: {
+                type: Boolean,
+                default: false,
             },
         },
     },
@@ -109,12 +154,20 @@ const passengerSchema = new mongoose.Schema(
 );
 
 // Indexes for better query performance
-passengerSchema.index({ email: 1 });
-passengerSchema.index({ firebaseUid: 1 });
-passengerSchema.index({ 'rating.average': -1 });
+userSchema.index({ email: 1 });
+userSchema.index({ firebaseUid: 1 });
+userSchema.index({ 'rating.average': -1 });
+
+// Virtual for full vehicle info
+userSchema.virtual('vehicleInfo').get(function () {
+    if (this.vehicle && this.vehicle.model) {
+        return `${this.vehicle.model} (${this.vehicle.plateNumber})`;
+    }
+    return null;
+});
 
 // Method to update rating
-passengerSchema.methods.updateRating = function (newRating) {
+userSchema.methods.updateRating = function (newRating) {
     this.rating.total += newRating;
     this.rating.count += 1;
     this.rating.average = this.rating.total / this.rating.count;
@@ -122,23 +175,16 @@ passengerSchema.methods.updateRating = function (newRating) {
 };
 
 // Method to increment ride count
-passengerSchema.methods.incrementRideCount = function () {
+userSchema.methods.incrementRideCount = function (asDriver = false) {
     this.stats.totalRides += 1;
+    if (asDriver) {
+        this.stats.totalRidesAsDriver += 1;
+    } else {
+        this.stats.totalRidesAsPassenger += 1;
+    }
     return this.save();
 };
 
-// Method to update spending
-passengerSchema.methods.updateSpending = function (amount) {
-    this.stats.totalSpent += amount;
-    return this.save();
-};
+const User = mongoose.model('User', userSchema);
 
-// Method to update money saved
-passengerSchema.methods.updateMoneySaved = function (amount) {
-    this.stats.moneySaved += amount;
-    return this.save();
-};
-
-const Passenger = mongoose.model('Passenger', passengerSchema);
-
-export default Passenger;
+export default User;

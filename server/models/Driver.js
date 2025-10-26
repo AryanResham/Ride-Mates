@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const driverSchema = new mongoose.Schema(
     {
@@ -232,4 +232,4 @@ driverSchema.methods.updateAvailability = function (isAvailable) {
 
 const Driver = mongoose.model('Driver', driverSchema);
 
-module.exports = Driver;
+export default Driver;

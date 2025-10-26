@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const requestSchema = new mongoose.Schema(
     {
@@ -12,13 +12,13 @@ const requestSchema = new mongoose.Schema(
         },
         passenger: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Passenger',
+            ref: 'User',
             required: true,
             index: true,
         },
         driver: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Driver',
+            ref: 'User',
             required: true,
             index: true,
         },
@@ -173,4 +173,4 @@ requestSchema.statics.getPendingCountForDriver = function (driverId) {
 
 const Request = mongoose.model('Request', requestSchema);
 
-module.exports = Request;
+export default Request;

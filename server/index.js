@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import connectDB from './config/dbConn.js';
 import corsOptions from './config/corsOptions.js';
+import registerRouter from './routes/register.js';
 
 dotenv.config();
 
@@ -16,14 +17,14 @@ connectDB(MONGO_URI);
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Ride Mates API!');
 });
-
+app.use('/register', registerRouter);
 
 // RUN
 mongoose.connection.once('open', () => {

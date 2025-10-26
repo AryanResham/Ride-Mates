@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const ratingSchema = new mongoose.Schema(
     {
@@ -199,4 +199,4 @@ ratingSchema.statics.getRecentForUser = function (userId, limit = 10) {
 
 const Rating = mongoose.model('Rating', ratingSchema);
 
-module.exports = Rating;
+export default Rating;
