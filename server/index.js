@@ -6,6 +6,9 @@ import cookieParser from 'cookie-parser';
 import connectDB from './config/dbConn.js';
 import corsOptions from './config/corsOptions.js';
 import registerRouter from './routes/register.js';
+import authRouter from './routes/auth.js';
+import logoutRouter from './routes/logout.js';
+import driverRidesRouter from './routes/api/driverRides.js';
 
 dotenv.config();
 
@@ -25,6 +28,9 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Ride Mates API!');
 });
 app.use('/register', registerRouter);
+app.use('/auth', authRouter);
+app.use('/logout', logoutRouter);
+app.use('/api/driver/rides', driverRidesRouter);
 
 // RUN
 mongoose.connection.once('open', () => {

@@ -22,11 +22,10 @@ const rideSchema = new mongoose.Schema(
             trim: true,
         },
 
-        // Location coordinates (for future geolocation features)
         fromLocation: {
             type: {
                 type: String,
-                enum: ['Point'],
+                enum: 'Point',
                 default: 'Point',
             },
             coordinates: {
@@ -36,7 +35,7 @@ const rideSchema = new mongoose.Schema(
         toLocation: {
             type: {
                 type: String,
-                enum: ['Point'],
+                enum: 'Point',
                 default: 'Point',
             },
             coordinates: {
@@ -175,8 +174,8 @@ const rideSchema = new mongoose.Schema(
 rideSchema.index({ driver: 1, status: 1 });
 rideSchema.index({ departureDateTime: 1, status: 1 });
 rideSchema.index({ from: 1, to: 1, date: 1 });
-rideSchema.index({ fromLocation: '2dsphere' });
-rideSchema.index({ toLocation: '2dsphere' });
+// rideSchema.index({ fromLocation: '2dsphere' });
+// rideSchema.index({ toLocation: '2dsphere' });
 
 // Virtual for occupied seats
 rideSchema.virtual('occupiedSeats').get(function () {

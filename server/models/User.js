@@ -5,8 +5,7 @@ const userSchema = new mongoose.Schema(
         firebaseUid: {
             type: String,
             required: false,
-            unique: true,
-            index: true,
+            index: true
         },
 
         passwordHash: {
@@ -155,7 +154,10 @@ const userSchema = new mongoose.Schema(
 
 // Indexes for better query performance
 userSchema.index({ email: 1 });
-userSchema.index({ firebaseUid: 1 });
+userSchema.index(
+    { firebaseUid: 1 },
+    { unique: true, partialFilterExpression: { firebaseUid: { $type: 'string' } } }
+);
 userSchema.index({ 'rating.average': -1 });
 
 // Virtual for full vehicle info

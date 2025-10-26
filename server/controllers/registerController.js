@@ -21,6 +21,7 @@ const handleNewUser = async (req, res) => {
     const { role, name, email, phone, password, vehicle } = req.body;
 
     if (!role || !name || !email || !phone || !password) {
+        console.log('Missing fields:', { role, name, email, phone, password });
         return res.status(400).json({ 'message': 'All fields are required.' });
     }
 
