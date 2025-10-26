@@ -1,4 +1,4 @@
-import { Ride, User } from '../models/index.js';
+import { Ride, User } from '../../models/index.js';
 
 function parseDateAndTime(dateStr, timeStr) {
     if (!dateStr || typeof dateStr !== 'string') throw new Error('Invalid date format');
@@ -135,8 +135,8 @@ const createRide = async (req, res) => {
         // Create the ride
         const newRide = new Ride({
             driver: driver._id,
-            from: from.trim(),
-            to: to.trim(),
+            from: from.trim().toLowerCase(),
+            to: to.trim().toLowerCase(),
             date: dateOnly,
             time: time.trim(),
             departureDateTime: departureDateTime,

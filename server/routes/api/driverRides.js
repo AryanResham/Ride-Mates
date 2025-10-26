@@ -1,5 +1,5 @@
 import express from 'express';
-import { createRide, getDriverRides, getRideById } from '../../controllers/driverRidesController.js';
+import { createRide, getDriverRides, getRideById } from '../../controllers/api/driverRidesController.js';
 import multer from 'multer';
 
 const router = express.Router();
