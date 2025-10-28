@@ -10,6 +10,8 @@ import authRouter from './routes/auth.js';
 import logoutRouter from './routes/logout.js';
 import driverRidesRouter from './routes/api/driverRides.js';
 import riderRidesRouter from './routes/api/riderRides.js';
+import riderRequestsRouter from './routes/api/riderRequests.js';
+import driverRequestRouter from './routes/api/driverRequest.js';
 
 dotenv.config();
 
@@ -33,6 +35,8 @@ app.use('/auth', authRouter);
 app.use('/logout', logoutRouter);
 app.use('/api/driver/rides', driverRidesRouter);
 app.use('/api/rider/rides', riderRidesRouter);
+app.use('/api/rider/requests', riderRequestsRouter);
+app.use('/api/driver/requests', driverRequestRouter);
 
 // RUN
 mongoose.connection.once('open', () => {
