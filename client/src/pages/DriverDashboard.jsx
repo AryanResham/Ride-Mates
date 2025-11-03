@@ -8,12 +8,12 @@ import MyRidesTab from "../components/dashboard/MyRidesTab";
 import OverviewTab from "../components/dashboard/OverviewTab";
 import Navbar from "../components/dashboard/Navbar";
 
-function DriverDashboard() {
+function DriverDashboard({ setMode, currentMode }) {
   const [activeTab, setActiveTab] = useState("create");
   const tabLabels = ["Overview", "My Rides", "Requests", "Create"];
   return (
     <div className="font-display bg-[#FAFAFA] w-full min-h-screen">
-      <DashboardHeader />
+      <DashboardHeader setMode={setMode} currentMode={currentMode} />
       <div className="flex justify-center mt-4 mx-auto w-6xl gap-4 px-6">
         <UserProfileCard />
         <div className="max-w-6xl w-full mx-auto space-y-6d">

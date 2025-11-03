@@ -3,7 +3,7 @@ import { Settings, LogOut } from "lucide-react";
 import ModeSwitcher from "../ui/ModeSwitcher";
 import { useAuth } from "../../contexts/AuthContext";
 
-export default function DashboardHeader({}) {
+export default function DashboardHeader({ setMode, currentMode }) {
   const { user, signout, authLoading } = useAuth();
 
   const handleSignOut = async () => {
@@ -28,7 +28,11 @@ export default function DashboardHeader({}) {
             <span className="text-gray-900">Ride</span>
             <span className="text-yellow-600">Mate</span>
           </p>
-          <ModeSwitcher className="ml-3" />
+          <ModeSwitcher
+            className="ml-3"
+            setMode={setMode}
+            currentMode={currentMode}
+          />
         </div>
 
         {/* Desktop Nav */}
@@ -44,7 +48,7 @@ export default function DashboardHeader({}) {
               <Settings className="inline mr-2 h-4 w-4" />
               Settings
             </button>
-            <button 
+            <button
               onClick={handleSignOut}
               disabled={authLoading}
               className="font-medium rounded-xl bg-white/90 backdrop-blur px-3 py-2 text-sm border border-slate-200 shadow hover:bg-slate-100 disabled:opacity-60"

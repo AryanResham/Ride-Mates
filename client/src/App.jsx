@@ -12,6 +12,7 @@ function App() {
   useEffect(() => {
     if (!loading) {
       if (user && !profileCompletionRequired) {
+        // Set default mode based on user type, but allow manual switching
         if (user.isDriver) {
           setMode("driver");
         } else {
@@ -29,9 +30,9 @@ function App() {
     }
     switch (mode) {
       case "driver":
-        return <DriverDashboard />;
+        return <DriverDashboard setMode={setMode} currentMode={mode} />;
       case "passenger":
-        return <PassengerDashboard />;
+        return <PassengerDashboard setMode={setMode} currentMode={mode} />;
       default:
         return <LandingPage onNavigate={setMode} />;
     }
@@ -41,7 +42,12 @@ function App() {
     <>
       {/* Temporary Sign Out Button - now always visible */}
       {user && (
-        <button onClick={signout} className="fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg">Force Sign Out</button>
+        <button
+          onClick={signout}
+          className="fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg"
+        >
+          Force Sign Out
+        </button>
       )}
 
       {loading ? (

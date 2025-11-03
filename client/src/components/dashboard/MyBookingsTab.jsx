@@ -4,28 +4,28 @@ import { Calendar, Clock, MapPin, Star, X } from "lucide-react";
 export default function MyBookingsTab() {
   const [filter, setFilter] = useState("all");
   const [bookings, setBookings] = useState([
-    {
-      id: 11,
-      from: "Downtown",
-      to: "Airport",
-      date: "2024-01-15",
-      time: "14:30",
-      price: 25,
-      seats: 1,
-      status: "upcoming",
-      driver: { name: "John Smith", rating: 4.8 },
-    },
-    {
-      id: 12,
-      from: "University",
-      to: "Mall",
-      date: "2024-01-16",
-      time: "10:00",
-      price: 15,
-      seats: 1,
-      status: "completed",
-      driver: { name: "Emily Clark", rating: 4.7 },
-    },
+    // {
+    //   id: 11,
+    //   from: "Downtown",
+    //   to: "Airport",
+    //   date: "2024-01-15",
+    //   time: "14:30",
+    //   price: 25,
+    //   seats: 1,
+    //   status: "upcoming",
+    //   driver: { name: "John Smith", rating: 4.8 },
+    // },
+    // {
+    //   id: 12,
+    //   from: "University",
+    //   to: "Mall",
+    //   date: "2024-01-16",
+    //   time: "10:00",
+    //   price: 15,
+    //   seats: 1,
+    //   status: "completed",
+    //   driver: { name: "Emily Clark", rating: 4.7 },
+    // },
   ]);
 
   const filtered = filterBookings(bookings, filter);

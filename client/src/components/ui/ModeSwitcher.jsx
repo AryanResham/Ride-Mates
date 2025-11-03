@@ -1,9 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 
-export default function ModeSwitcher({ setMode, className = "" }) {
+export default function ModeSwitcher({
+  setMode,
+  className = "",
+  currentMode: propCurrentMode,
+}) {
   const [open, setOpen] = useState(false);
   const [currentMode, setCurrentMode] = useState("Driver");
+
+  // Sync with parent component's mode
+  useEffect(() => {
+    if (propCurrentMode) {
+      setCurrentMode(propCurrentMode === "driver" ? "Driver" : "Passenger");
+    }
+  }, [propCurrentMode]);
   const driverStyle =
     "border-yellow-300 bg-yellow-100 px-2 py-1 text-yellow-800 hover:bg-yellow-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2";
   const passengerStyle =
