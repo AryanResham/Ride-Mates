@@ -174,8 +174,8 @@ const rideSchema = new mongoose.Schema(
 rideSchema.index({ driver: 1, status: 1 });
 rideSchema.index({ departureDateTime: 1, status: 1 });
 rideSchema.index({ from: 1, to: 1, date: 1 });
-// rideSchema.index({ fromLocation: '2dsphere' });
-// rideSchema.index({ toLocation: '2dsphere' });
+rideSchema.index({ fromLocation: '2dsphere' });
+rideSchema.index({ toLocation: '2dsphere' });
 
 // Virtual for occupied seats
 rideSchema.virtual('occupiedSeats').get(function () {

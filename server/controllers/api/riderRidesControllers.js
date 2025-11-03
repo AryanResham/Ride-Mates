@@ -61,15 +61,6 @@ function parseDateAndTime(dateStr, timeStr) {
 // @access Private (Passenger only)
 const getRides = async (req, res) => {
     try {
-        const userEmail = req.cookies.email;
-        if (!userEmail) {
-            return res.status(401).json({ message: 'User not authenticated' });
-        }
-        const user = await User.findOne({ email: userEmail }).exec();
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
         const rides = await Ride.find({
             status: 'upcoming',
             availableSeats: { $gt: 0 }
@@ -77,33 +68,24 @@ const getRides = async (req, res) => {
             .populate('driver', 'name email phone avatar rating')
             .sort({ departureDateTime: 1 });
 
-        res.status(200).json({
-            message: 'Rides retrieved successfully',
-            count: rides.length,
-            rides: rides
-        });
+        res.status(200).json(rides);
 
     } catch (error) {
         console.error('Error fetching rides:', error);
-        res.status(500).json({
-            message: 'Error fetching rides',
-            error: error.message
-        });
+        res.status(500).json({ message: 'Error fetching rides', error: error.message });
     }
 };
 
-// @desc Search rides based on from, to, date, time
-// @route GET /api/rider/rides/search
-// @access Private (Passenger only)
 const searchRides = async (req, res) => {
     try {
-        const { from, to, date, time } = req.body;
-        console.log(req.body);
-        // Validation
-        if (!from || !to || !date || !time) {
-            return res.status(400).json({
-                message: 'Please provide from, to, date, and time parameters'
-            });
+        const { fromLocation, toLocation, date, time } = req.body;
+
+        if (!fromLocation || !toLocation || !date || !time) {
+            return res.status(400).json({ message: 'Please provide fromLocation, toLocation, date, and time parameters' });
+        }
+
+        if (!fromLocation.coordinates || !toLocation.coordinates || fromLocation.coordinates.length !== 2 || toLocation.coordinates.length !== 2) {
+            return res.status(400).json({ message: 'Invalid location coordinates' });
         }
 
         let departureDateTime;
@@ -114,14 +96,30 @@ const searchRides = async (req, res) => {
             return res.status(400).json({ message: err.message });
         }
 
-        // Allow flexible time search: +-8 hours from requested time
-        const timeWindow = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+        const timeWindow = 8 * 60 * 60 * 1000; // 8 hours
         const startTime = new Date(departureDateTime.getTime() - timeWindow);
         const endTime = new Date(departureDateTime.getTime() + timeWindow);
 
+        const searchRadiusMeters = 1000; // 1km
+        const searchRadiusRadians = searchRadiusMeters / 6378100;
+
         const rides = await Ride.find({
-            from: from.trim().toLowerCase(),
-            to: to.trim().toLowerCase(),
+            $and: [
+                {
+                    fromLocation: {
+                        $geoWithin: {
+                            $centerSphere: [fromLocation.coordinates, searchRadiusRadians]
+                        }
+                    }
+                },
+                {
+                    toLocation: {
+                        $geoWithin: {
+                            $centerSphere: [toLocation.coordinates, searchRadiusRadians]
+                        }
+                    }
+                }
+            ],
             departureDateTime: { $gte: startTime, $lte: endTime },
             status: 'upcoming',
             availableSeats: { $gt: 0 }
@@ -129,18 +127,11 @@ const searchRides = async (req, res) => {
             .populate('driver', 'name email phone avatar rating')
             .sort({ departureDateTime: 1 });
 
-        res.status(200).json({
-            message: 'Rides searched successfully',
-            count: rides.length,
-            rides: rides
-        });
+        res.status(200).json(rides);
 
     } catch (error) {
         console.error('Error searching rides:', error);
-        res.status(500).json({
-            message: 'Error searching rides',
-            error: error.message
-        });
+        res.status(500).json({ message: 'Error searching rides', error: error.message });
     }
 };
 

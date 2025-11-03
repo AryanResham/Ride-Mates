@@ -1,13 +1,9 @@
 import express from 'express';
 import handleNewUser from '../controllers/registerController.js';
-import multer from 'multer';
+import authMiddleware from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-const upload = multer(); // Parses multipart/form-data into req.body (no file storage)
-
-router.post(
-    '/', upload.none(), handleNewUser
-)
+router.post('/', authMiddleware, handleNewUser);
 
 export default router;

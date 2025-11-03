@@ -1,9 +1,12 @@
 import express from 'express';
-import { searchRides, getRides } from '../../controllers/api/riderRidesControllers.js';
+import { getRides, searchRides } from '../../controllers/api/riderRidesControllers.js';
+import authMiddleware from '../../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+router.use(authMiddleware);
+
 router.get('/', getRides);
-router.get('/search', searchRides);
+router.post('/search', searchRides);
 
 export default router;

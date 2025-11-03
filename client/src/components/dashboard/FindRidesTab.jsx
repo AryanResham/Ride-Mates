@@ -1,84 +1,74 @@
 import { useState } from "react";
-import { Check, Filter, MessageSquare, Phone, Star, X } from "lucide-react";
-import { Field, Input, Select, Textarea } from "../ui/FormUi";
+import { MessageSquare, Phone, Star } from "lucide-react";
+import { Field, Input } from "../ui/FormUi";
+import Geocoder from "../ui/Geocoder";
 
 export default function FindRidesTab() {
-  const [form, setForm] = useState({ from: "", to: "", date: "", time: "" });
-  const rides = [
-    {
-      id: 1,
-      from: "Downtown",
-      to: "Airport",
-      date: "2024-01-15",
-      time: "14:30",
-      price: 25,
-      driver: {
-        name: "John Smith",
-        rating: 4.8,
-        rides: 127,
-        car: "Honda Civic",
-      },
-      meta: { seats: "2/4 seats", duration: "45 min", car: "Honda Civic" },
-    },
-    {
-      id: 2,
-      from: "University",
-      to: "Mall",
-      date: "2024-01-16",
-      time: "10:00",
-      price: 15,
-      driver: {
-        name: "Emily Clark",
-        rating: 4.7,
-        rides: 89,
-        car: "Toyota Camry",
-      },
-      meta: { seats: "1/3 seats", duration: "25 min", car: "Toyota Camry" },
-    },
-  ];
+  const [fromLocation, setFromLocation] = useState(null);
+  const [toLocation, setToLocation] = useState(null);
+  const [form, setForm] = useState({ date: "", time: "" });
+  const [rides, setRides] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handle = (e) => {
+  const handleFormChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
+  const handleSearch = async () => {
+    if (!fromLocation || !toLocation || !form.date || !form.time) {
+      setError("Please select start, destination, date, and time.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setRides([]);
+
+    try {
+      const response = await fetch("/api/rider/rides/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // Send cookies
+        body: JSON.stringify({
+          fromLocation: {
+            type: "Point",
+            coordinates: fromLocation.center,
+          },
+          toLocation: {
+            type: "Point",
+            coordinates: toLocation.center,
+          },
+          date: form.date,
+          time: form.time,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || "Failed to fetch rides");
+      }
+
+      const data = await response.json();
+      setRides(data.rides || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl w-full mx-auto space-y-6">
-      {/* Search Card */}
       <section className="w-full bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="p-5 sm:p-6 md:p-8 pt-4">
-          <div className="flex items-center gap-3 mb-4">
-            <button className="px-4 py-2 rounded-xl bg-yellow-400 font-semibold text-gray-900 hover:bg-yellow-300">
-              Find Rides
-            </button>
-            <button className="px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
-              My Bookings
-            </button>
-            <button className="px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">
-              Profile
-            </button>
-          </div>
-
-          <p className="text-gray-500 mb-4">
-            Search for available rides in your area
-          </p>
-
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Find a Ride</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="From">
-              <Input
-                name="from"
-                value={form.from}
-                onChange={handle}
-                placeholder="Starting location"
-              />
+              <Geocoder onResult={setFromLocation} placeholder="Starting location" />
             </Field>
             <Field label="To">
-              <Input
-                name="to"
-                value={form.to}
-                onChange={handle}
-                placeholder="Destination"
-              />
+              <Geocoder onResult={setToLocation} placeholder="Destination" />
             </Field>
           </div>
 
@@ -88,7 +78,7 @@ export default function FindRidesTab() {
                 type="date"
                 name="date"
                 value={form.date}
-                onChange={handle}
+                onChange={handleFormChange}
                 placeholder="dd-mm-yyyy"
               />
             </Field>
@@ -97,28 +87,32 @@ export default function FindRidesTab() {
                 type="time"
                 name="time"
                 value={form.time}
-                onChange={handle}
+                onChange={handleFormChange}
                 placeholder="--:-- --"
               />
             </Field>
           </div>
 
           <div className="flex gap-3 mt-4">
-            <button className="px-5 py-3 rounded-xl bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-300">
-              🔎 Search Rides
-            </button>
-            <button className="px-5 py-3 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filters
+            <button
+              onClick={handleSearch}
+              disabled={loading}
+              className="px-5 py-3 rounded-xl bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-300 disabled:bg-gray-300"
+            >
+              {loading ? "Searching..." : "🔎 Search Rides"}
             </button>
           </div>
         </div>
       </section>
 
-      {/* Results */}
       <section className="space-y-4">
-        {rides.map((r) => (
-          <RideResultCard key={r.id} ride={r} />
+        {error && <p className="text-red-500">{error}</p>}
+        {loading && <p>Loading results...</p>}
+        {!loading && rides.length === 0 && !error && (
+          <p>No rides found. Try adjusting your search.</p>
+        )}
+        {rides.map((ride) => (
+          <RideResultCard key={ride._id} ride={ride} />
         ))}
       </section>
     </div>
@@ -131,39 +125,32 @@ function RideResultCard({ ride }) {
       <div className="p-5">
         <div className="flex items-start justify-between">
           <div>
-            <h3 className="text-gray-900 font-semibold">
+            <h3 className="text-gray-900 font-semibold capitalize">
               {ride.from} → {ride.to}
             </h3>
             <p className="text-xs text-gray-500 mt-1">
-              {ride.date} at {ride.time}
+              {new Date(ride.departureDateTime).toLocaleDateString()} at {new Date(ride.departureDateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
             <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
-              <span>{ride.meta.seats}</span>
+              <span>{ride.availableSeats} seats available</span>
               <span>•</span>
-              <span>{ride.meta.duration}</span>
-              <span>•</span>
-              <span>{ride.meta.car}</span>
+              <span>{ride.vehicle}</span>
             </div>
           </div>
           <div className="text-right">
-            <p className="text-2xl font-bold text-gray-900">${ride.price}</p>
+            <p className="text-2xl font-bold text-gray-900">${ride.pricePerSeat.toFixed(2)}</p>
             <p className="text-xs text-gray-500">per person</p>
           </div>
         </div>
 
-        {/* Driver Row */}
         <div className="mt-4 flex items-center justify-between p-4 bg-gray-50 rounded-lg">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-gray-200" />
+            <img src={ride.driver.avatar || '/default-avatar.png'} alt={ride.driver.name} className="h-10 w-10 rounded-full bg-gray-200 object-cover" />
             <div>
               <p className="font-medium text-gray-900">{ride.driver.name}</p>
               <p className="text-xs text-gray-500 flex items-center gap-1">
                 <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                <span>{ride.driver.rating}</span>
-                <span>•</span>
-                <span>{ride.driver.rides} rides</span>
-                <span>•</span>
-                <span>{ride.driver.car}</span>
+                <span>{ride.driver.rating?.average.toFixed(1) || 'New'}</span>
               </p>
             </div>
           </div>

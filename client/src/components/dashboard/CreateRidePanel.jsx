@@ -1,28 +1,74 @@
 import { useState } from "react";
-import Navbar from "./Navbar";
+import Geocoder from "../ui/Geocoder";
 import { Field, Input, Select, Textarea } from "../ui/FormUi";
 
 export default function CreateRidePanel() {
+  const [fromLocation, setFromLocation] = useState(null);
+  const [toLocation, setToLocation] = useState(null);
   const [form, setForm] = useState({
-    from: "",
-    to: "",
     date: "",
     time: "",
     seats: 1,
     price: "",
-    vehicle: "",
     notes: "",
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: send to API
-    console.log("Create ride:", form);
+    setError("");
+    setSuccess("");
+
+    if (!fromLocation || !toLocation) {
+      setError("Please select a starting location and destination.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const rideData = {
+        ...form,
+        from: fromLocation.place_name,
+        to: toLocation.place_name,
+        fromLocation: {
+          type: 'Point',
+          coordinates: fromLocation.center,
+        },
+        toLocation: {
+          type: 'Point',
+          coordinates: toLocation.center,
+        },
+        availableSeats: form.seats,
+        pricePerSeat: form.price,
+      };
+
+      const response = await fetch("/api/driver/rides", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include", // Send cookies
+        body: JSON.stringify(rideData),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || "Failed to create ride.");
+      }
+
+      setSuccess("Ride created successfully!");
+      // Optionally reset form here
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDraft = () => {
@@ -42,24 +88,17 @@ export default function CreateRidePanel() {
               Share your journey and connect with passengers
             </p>
 
+            {error && <div className="mt-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>}
+            {success && <div className="mt-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm">{success}</div>}
+
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               {/* From / To */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="From">
-                  <Input
-                    name="from"
-                    placeholder="Starting location"
-                    value={form.from}
-                    onChange={handleChange}
-                  />
+                  <Geocoder onResult={setFromLocation} placeholder="Starting location" />
                 </Field>
                 <Field label="To">
-                  <Input
-                    name="to"
-                    placeholder="Destination"
-                    value={form.to}
-                    onChange={handleChange}
-                  />
+                  <Geocoder onResult={setToLocation} placeholder="Destination" />
                 </Field>
               </div>
 
@@ -96,7 +135,7 @@ export default function CreateRidePanel() {
                 </Field>
               </div>
 
-              {/* Price / Vehicle */}
+              {/* Price */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Price per seat">
                   <div className="relative">
@@ -114,14 +153,6 @@ export default function CreateRidePanel() {
                       className="pl-7"
                     />
                   </div>
-                </Field>
-                <Field label="Vehicle">
-                  <Input
-                    name="vehicle"
-                    placeholder="Honda Civic (ABC-123)"
-                    value={form.vehicle}
-                    onChange={handleChange}
-                  />
                 </Field>
               </div>
 

@@ -12,14 +12,14 @@ import driverRidesRouter from './routes/api/driverRides.js';
 import riderRidesRouter from './routes/api/riderRides.js';
 import riderRequestsRouter from './routes/api/riderRequests.js';
 import driverRequestRouter from './routes/api/driverRequest.js';
+import userRouter from './routes/api/user.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/ridemates';
+const PORT = process.env.PORT || 3500;
 
-connectDB(MONGO_URI);
+connectDB(process.env.DATABASE_URI);
 
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -37,6 +37,7 @@ app.use('/api/driver/rides', driverRidesRouter);
 app.use('/api/rider/rides', riderRidesRouter);
 app.use('/api/rider/requests', riderRequestsRouter);
 app.use('/api/driver/requests', driverRequestRouter);
+app.use('/api/user', userRouter);
 
 // RUN
 mongoose.connection.once('open', () => {

@@ -4,14 +4,8 @@ const userSchema = new mongoose.Schema(
     {
         firebaseUid: {
             type: String,
-            required: false,
-            index: true
-        },
-
-        passwordHash: {
-            type: String,
-            required: true,
-            trim: true,
+            required: true, // Firebase UID is now the primary identifier
+            unique: true,
         },
         name: {
             type: String,
@@ -27,95 +21,39 @@ const userSchema = new mongoose.Schema(
         },
         phone: {
             type: String,
+            required: true,
             trim: true,
-        },
-
-        // Profile Information
-        role: {
-            passenger: {
-                type: Boolean,
-                default: true
-            },
-            driver: {
-                type: Boolean,
-                default: false
-            },
-            admin: {
-                type: Boolean,
-                default: false
-            }
         },
         avatar: {
             type: String,
             default: null,
         },
-
-        // Driver Specific Information
-        vehicle: {
-            model: {
-                type: String,
-                trim: true,
+        
+        // Driver-specific information, only present if the user provides vehicle details
+        driverProfile: {
+            vehicle: {
+                model: String,
+                plateNumber: { type: String, unique: true, sparse: true },
             },
-            plateNumber: {
-                type: String,
-                trim: true,
-            },
-            color: {
-                type: String,
-                trim: true,
+            availability: {
+                isAvailable: { type: Boolean, default: true },
+                lastActive: { type: Date, default: Date.now },
             },
         },
 
-        // Rating and Statistics
+        // Combined rating for the user
         rating: {
-            average: {
-                type: Number,
-                default: 0,
-                min: 0,
-                max: 5,
-            },
-            count: {
-                type: Number,
-                default: 0,
-            },
-            total: {
-                type: Number,
-                default: 0,
-            },
+            average: { type: Number, default: 0, min: 0, max: 5 },
+            count: { type: Number, default: 0 },
         },
 
-        // Statistics
+        // Combined statistics
         stats: {
-            totalRides: {
-                type: Number,
-                default: 0,
-            },
-            totalRidesAsDriver: {
-                type: Number,
-                default: 0,
-            },
-            totalRidesAsPassenger: {
-                type: Number,
-                default: 0,
-            },
-            totalEarnings: {
-                type: Number,
-                default: 0,
-            },
-            totalSpent: {
-                type: Number,
-                default: 0,
-            },
-            moneySaved: {
-                type: Number,
-                default: 0,
-            },
-            completionRate: {
-                type: Number,
-                default: 100,
-                min: 0,
-                max: 100,
-            },
+            totalRidesAsDriver: { type: Number, default: 0 },
+            totalRidesAsPassenger: { type: Number, default: 0 },
+            totalEarnings: { type: Number, default: 0 }, // as Driver
+            totalSpent: { type: Number, default: 0 }, // as Passenger
+            completionRate: { type: Number, default: 100, min: 0, max: 100 },
         },
 
         // Account Status
@@ -123,25 +61,22 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
-        isVerified: {
-            type: Boolean,
-            default: false,
-        },
-        isDriver: {
+        isVerified: { // e.g., email or phone verified
             type: Boolean,
             default: false,
         },
 
-        // Preferences
+        // User Preferences
         preferences: {
             notifications: {
                 email: { type: Boolean, default: true },
                 sms: { type: Boolean, default: false },
                 push: { type: Boolean, default: true },
             },
-            autoAcceptRequests: {
-                type: Boolean,
-                default: false,
+            ridePreferences: { // As a passenger
+                allowSmoking: { type: Boolean, default: false },
+                allowPets: { type: Boolean, default: false },
+                preferMusic: { type: Boolean, default: true },
             },
         },
     },
@@ -152,38 +87,24 @@ const userSchema = new mongoose.Schema(
     }
 );
 
-// Indexes for better query performance
-userSchema.index({ email: 1 });
-userSchema.index(
-    { firebaseUid: 1 },
-    { unique: true, partialFilterExpression: { firebaseUid: { $type: 'string' } } }
-);
-userSchema.index({ 'rating.average': -1 });
+// Virtual to check if a user is a driver
+userSchema.virtual('isDriver').get(function () {
+    return this.driverProfile && this.driverProfile.vehicle && this.driverProfile.vehicle.plateNumber;
+});
 
 // Virtual for full vehicle info
 userSchema.virtual('vehicleInfo').get(function () {
-    if (this.vehicle && this.vehicle.model) {
-        return `${this.vehicle.model} (${this.vehicle.plateNumber})`;
+    if (this.isDriver) {
+        return `${this.driverProfile.vehicle.model} (${this.driverProfile.vehicle.plateNumber})`;
     }
     return null;
 });
 
 // Method to update rating
 userSchema.methods.updateRating = function (newRating) {
-    this.rating.total += newRating;
+    const total = (this.rating.average * this.rating.count) + newRating;
     this.rating.count += 1;
-    this.rating.average = this.rating.total / this.rating.count;
-    return this.save();
-};
-
-// Method to increment ride count
-userSchema.methods.incrementRideCount = function (asDriver = false) {
-    this.stats.totalRides += 1;
-    if (asDriver) {
-        this.stats.totalRidesAsDriver += 1;
-    } else {
-        this.stats.totalRidesAsPassenger += 1;
-    }
+    this.rating.average = total / this.rating.count;
     return this.save();
 };
 

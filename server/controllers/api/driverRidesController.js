@@ -61,23 +61,30 @@ function parseDateAndTime(dateStr, timeStr) {
 // @access Private (Driver only)
 const createRide = async (req, res) => {
     try {
-        console.log('Request Body:', req.body);
         const {
             from,
             to,
+            fromLocation,
+            toLocation,
             date,
             time,
             availableSeats,
             pricePerSeat,
-            vehicle,
             notes
         } = req.body;
 
-        // Validation
-        if (!from || !to || !date || !time || !availableSeats || !pricePerSeat || !vehicle) {
-            return res.status(400).json({
-                message: 'Please provide all required fields: from, to, date, time, availableSeats, pricePerSeat, and vehicle'
-            });
+        if (!from || !to || !fromLocation || !toLocation || !date || !time || !availableSeats || !pricePerSeat) {
+            return res.status(400).json({ message: 'All required fields must be provided.' });
+        }
+
+        const firebaseUid = req.user.uid; // From authMiddleware
+        const user = await User.findOne({ firebaseUid }).exec();
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        if (!user.isDriver) {
+            return res.status(403).json({ message: 'User is not authorized to create rides.' });
         }
 
         let dateOnly, departureDateTime;
@@ -89,161 +96,84 @@ const createRide = async (req, res) => {
             return res.status(400).json({ message: err.message });
         }
 
-        // disallow past departures
         if (departureDateTime < new Date()) {
-            return res.status(400).json({ message: 'Cannot create a ride in the past' });
+            return res.status(400).json({ message: 'Cannot create a ride in the past.' });
         }
 
-        // Get driver ID from session/cookie (assuming email is stored in cookie)
-        const driverEmail = req.cookies.email; // You'll need to set this during login
-
-        if (!driverEmail) {
-            return res.status(401).json({ message: 'User not authenticated' });
-        }
-
-        // Find the driver
-        const driver = await User.findOne({ email: driverEmail }).exec();
-
-        if (!driver) {
-            return res.status(404).json({ message: 'Driver not found' });
-        }
-
-        // Check if user has driver role
-        if (!driver.role.driver) {
-            return res.status(403).json({ message: 'User is not authorized to create rides. Driver role required.' });
-        }
-
-        // Validate date is not in the past
-        const rideDate = new Date(date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (rideDate < today) {
-            return res.status(400).json({ message: 'Cannot create a ride for a past date' });
-        }
-
-        // Validate available seats
-        if (availableSeats < 1 || availableSeats > 8) {
-            return res.status(400).json({ message: 'Available seats must be between 1 and 8' });
-        }
-
-        // Validate price
-        if (pricePerSeat < 0) {
-            return res.status(400).json({ message: 'Price per seat cannot be negative' });
-        }
-
-        // Create the ride
         const newRide = new Ride({
-            driver: driver._id,
+            driver: user._id,
             from: from.trim().toLowerCase(),
             to: to.trim().toLowerCase(),
+            fromLocation: fromLocation,
+            toLocation: toLocation,
             date: dateOnly,
             time: time.trim(),
             departureDateTime: departureDateTime,
             availableSeats: parseInt(availableSeats),
             totalSeats: parseInt(availableSeats),
             pricePerSeat: parseFloat(pricePerSeat),
-            vehicle: vehicle.trim(),
+            vehicle: user.vehicleInfo,
             notes: notes ? String(notes).trim() : '',
-            status: 'upcoming',
-            isDraft: false
         });
 
-        // Save the ride
         const savedRide = await newRide.save();
-
-        // Populate driver information for response
         await savedRide.populate('driver', 'name email phone avatar');
 
-        res.status(201).json({
-            message: 'Ride created successfully',
-            ride: savedRide
-        });
+        res.status(201).json(savedRide);
 
     } catch (error) {
         console.error('Error creating ride:', error);
-        res.status(500).json({
-            message: 'Error creating ride',
-            error: error.message
-        });
+        res.status(500).json({ message: 'Error creating ride', error: error.message });
     }
 };
 
-// @desc Get all rides for a specific driver
-// @route GET /api/driver/rides
-// @access Private (Driver only)
 const getDriverRides = async (req, res) => {
     try {
-        const driverEmail = req.cookies.email;
-
-        if (!driverEmail) {
-            return res.status(401).json({ message: 'User not authenticated' });
+        const firebaseUid = req.user.uid;
+        const user = await User.findOne({ firebaseUid }).exec();
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
         }
 
-        const driver = await User.findOne({ email: driverEmail }).exec();
-
-        if (!driver) {
-            return res.status(404).json({ message: 'Driver not found' });
+        if (!user.isDriver) {
+            return res.status(200).json([]); // Return empty array if not a driver
         }
 
-        // Get all rides for this driver
-        const rides = await Ride.find({ driver: driver._id })
+        const rides = await Ride.find({ driver: user._id })
             .populate('driver', 'name email phone avatar')
             .populate('bookings')
             .sort({ departureDateTime: -1 });
 
-        res.status(200).json({
-            message: 'Rides retrieved successfully',
-            count: rides.length,
-            rides: rides
-        });
+        res.status(200).json(rides);
 
     } catch (error) {
         console.error('Error fetching driver rides:', error);
-        res.status(500).json({
-            message: 'Error fetching rides',
-            error: error.message
-        });
+        res.status(500).json({ message: 'Error fetching rides', error: error.message });
     }
 };
 
-// @desc Get a single ride by ID
-// @route GET /api/driver/rides/:id
-// @access Private (Driver only)
 const getRideById = async (req, res) => {
     try {
         const { id } = req.params;
-        const driverEmail = req.cookies.email;
-
-        if (!driverEmail) {
-            return res.status(401).json({ message: 'User not authenticated' });
+        const firebaseUid = req.user.uid;
+        const user = await User.findOne({ firebaseUid }).exec();
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
         }
 
-        const driver = await User.findOne({ email: driverEmail }).exec();
-
-        if (!driver) {
-            return res.status(404).json({ message: 'Driver not found' });
-        }
-
-        const ride = await Ride.findOne({ _id: id, driver: driver._id })
+        const ride = await Ride.findOne({ _id: id, driver: user._id })
             .populate('driver', 'name email phone avatar')
             .populate('bookings');
 
         if (!ride) {
-            return res.status(404).json({ message: 'Ride not found' });
+            return res.status(404).json({ message: 'Ride not found or user is not the driver.' });
         }
 
-        res.status(200).json({
-            message: 'Ride retrieved successfully',
-            ride: ride
-        });
+        res.status(200).json(ride);
 
     } catch (error) {
         console.error('Error fetching ride:', error);
-        res.status(500).json({
-            message: 'Error fetching ride',
-            error: error.message
-        });
+        res.status(500).json({ message: 'Error fetching ride', error: error.message });
     }
 };
 
