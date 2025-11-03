@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import Geocoder from "../ui/Geocoder";
 import { Field, Input, Select, Textarea } from "../ui/FormUi";
 
 export default function CreateRidePanel() {
+  const { getIdToken } = useAuth();
   const [fromLocation, setFromLocation] = useState(null);
   const [toLocation, setToLocation] = useState(null);
   const [form, setForm] = useState({
@@ -33,16 +35,19 @@ export default function CreateRidePanel() {
 
     setLoading(true);
     try {
+      // Get the Firebase ID token
+      const token = await getIdToken();
+
       const rideData = {
         ...form,
         from: fromLocation.place_name,
         to: toLocation.place_name,
         fromLocation: {
-          type: 'Point',
+          type: "Point",
           coordinates: fromLocation.center,
         },
         toLocation: {
-          type: 'Point',
+          type: "Point",
           coordinates: toLocation.center,
         },
         availableSeats: form.seats,
@@ -51,8 +56,10 @@ export default function CreateRidePanel() {
 
       const response = await fetch("/api/driver/rides", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // Send cookies
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Add the Bearer token
+        },
         body: JSON.stringify(rideData),
       });
 
@@ -63,7 +70,6 @@ export default function CreateRidePanel() {
 
       setSuccess("Ride created successfully!");
       // Optionally reset form here
-
     } catch (err) {
       setError(err.message);
     } finally {
@@ -88,17 +94,31 @@ export default function CreateRidePanel() {
               Share your journey and connect with passengers
             </p>
 
-            {error && <div className="mt-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>}
-            {success && <div className="mt-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm">{success}</div>}
+            {error && (
+              <div className="mt-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mt-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm">
+                {success}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-5">
               {/* From / To */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="From">
-                  <Geocoder onResult={setFromLocation} placeholder="Starting location" />
+                  <Geocoder
+                    onResult={setFromLocation}
+                    placeholder="Starting location"
+                  />
                 </Field>
                 <Field label="To">
-                  <Geocoder onResult={setToLocation} placeholder="Destination" />
+                  <Geocoder
+                    onResult={setToLocation}
+                    placeholder="Destination"
+                  />
                 </Field>
               </div>
 
@@ -190,5 +210,3 @@ export default function CreateRidePanel() {
     </>
   );
 }
-
-/* ---------- Small reusable UI bits ---------- */

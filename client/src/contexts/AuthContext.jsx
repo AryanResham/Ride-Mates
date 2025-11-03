@@ -18,7 +18,8 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [profileCompletionRequired, setProfileCompletionRequired] = useState(false);
+  const [profileCompletionRequired, setProfileCompletionRequired] =
+    useState(false);
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false); // Flag to prevent race condition
@@ -27,21 +28,44 @@ export function AuthProvider({ children }) {
   // Fetches our backend profile and merges it with the firebase user
   const getBackendProfile = async (fbUser) => {
     if (!fbUser) return null;
-    const token = await fbUser.getIdToken();
-    const response = await fetch("/api/user/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
 
-    if (response.ok) {
-      const backendUser = await response.json();
-      setProfileCompletionRequired(false);
-      return { ...fbUser, ...backendUser }; // Return merged user
-    } else if (response.status === 404) {
-      // New social user, needs to complete profile
-      setProfileCompletionRequired(true);
-      return fbUser; // Return partial user for now
-    } else {
-      throw new Error("Failed to fetch user profile from backend.");
+    try {
+      const token = await fbUser.getIdToken();
+      const response = await fetch("/api/user/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const backendUser = await response.json();
+        setProfileCompletionRequired(false);
+        return { ...fbUser, ...backendUser }; // Return merged user
+      } else if (response.status === 404) {
+        // New social user, needs to complete profile
+        setProfileCompletionRequired(true);
+        return fbUser; // Return partial user for now
+      } else if (response.status === 401) {
+        // Token invalid/expired, try refreshing
+        console.warn("Token expired, attempting refresh...");
+        const freshToken = await fbUser.getIdToken(true); // Force refresh
+        const retryResponse = await fetch("/api/user/me", {
+          headers: { Authorization: `Bearer ${freshToken}` },
+        });
+
+        if (retryResponse.ok) {
+          const backendUser = await retryResponse.json();
+          setProfileCompletionRequired(false);
+          return { ...fbUser, ...backendUser };
+        } else {
+          throw new Error("Failed to fetch user profile after token refresh.");
+        }
+      } else {
+        throw new Error(
+          `Failed to fetch user profile: ${response.status} ${response.statusText}`
+        );
+      }
+    } catch (error) {
+      console.error("Error in getBackendProfile:", error);
+      throw error;
     }
   };
 
@@ -66,7 +90,11 @@ export function AuthProvider({ children }) {
     setIsSigningUp(true); // Set the flag
     try {
       // 1. Create user in Firebase
-      const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const cred = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
       await updateProfile(cred.user, { displayName: formData.name });
 
       // 2. Get token and create user profile in our backend
@@ -101,7 +129,6 @@ export function AuthProvider({ children }) {
       setUser({ ...cred.user, ...backendUser });
       setProfileCompletionRequired(false);
       setLoading(false); // Explicitly set loading to false on success
-
     } finally {
       setAuthLoading(false);
       setIsSigningUp(false); // Lower the flag
@@ -135,6 +162,19 @@ export function AuthProvider({ children }) {
     setProfileCompletionRequired(false);
   }
 
+  // Function to get fresh ID token for API calls
+  async function getIdToken(forceRefresh = false) {
+    if (!auth.currentUser) {
+      throw new Error("No authenticated user");
+    }
+    try {
+      return await auth.currentUser.getIdToken(forceRefresh);
+    } catch (error) {
+      console.error("Failed to get ID token:", error);
+      throw error;
+    }
+  }
+
   const value = {
     user, // This will be the merged user object
     loading,
@@ -144,6 +184,7 @@ export function AuthProvider({ children }) {
     login,
     loginWithGoogle,
     signout,
+    getIdToken, // Export this for use in API calls
   };
 
   return (

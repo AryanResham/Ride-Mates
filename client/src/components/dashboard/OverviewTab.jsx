@@ -4,6 +4,32 @@ import QuickActionItem from "../ui/QuickActionItem";
 import { Car, IndianRupee, Star, TrendingUp, Users } from "lucide-react";
 
 export default function Overview() {
+  const recentRides = [
+    // {
+    //   from: "Mumbai Central",
+    //   to: "Pune",
+    //   date: "Today, 2:00 PM",
+    //   passengers: 2,
+    //   earnings: "₹450",
+    //   status: "completed",
+    // },
+    // {
+    //   from: "Andheri",
+    //   to: "Bandra",
+    //   date: "Yesterday, 9:30 AM",
+    //   passengers: 1,
+    //   earnings: "₹180",
+    //   status: "completed",
+    // },
+    // {
+    //   from: "Thane",
+    //   to: "Navi Mumbai",
+    //   date: "Dec 27, 6:15 PM",
+    //   passengers: 3,
+    //   earnings: "₹320",
+    //   status: "completed",
+    // },
+  ];
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -46,30 +72,21 @@ export default function Overview() {
             Recent Rides
           </h3>
           <div className="space-y-4">
-            <RecentRideItem
-              from="Mumbai Central"
-              to="Pune"
-              date="Today, 2:00 PM"
-              passengers={2}
-              earnings="₹450"
-              status="completed"
-            />
-            <RecentRideItem
-              from="Andheri"
-              to="Bandra"
-              date="Yesterday, 9:30 AM"
-              passengers={1}
-              earnings="₹180"
-              status="completed"
-            />
-            <RecentRideItem
-              from="Thane"
-              to="Navi Mumbai"
-              date="Dec 27, 6:15 PM"
-              passengers={3}
-              earnings="₹320"
-              status="completed"
-            />
+            {recentRides.length === 0 ? (
+              <p className="text-gray-500">No recent rides</p>
+            ) : (
+              recentRides.map((ride, index) => (
+                <RecentRideItem
+                  key={index}
+                  from={ride.from}
+                  to={ride.to}
+                  date={ride.date}
+                  passengers={ride.passengers}
+                  earnings={ride.earnings}
+                  status={ride.status}
+                />
+              ))
+            )}
           </div>
         </div>
 

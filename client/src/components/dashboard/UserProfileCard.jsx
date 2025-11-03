@@ -11,10 +11,14 @@ export default function UserProfileCard({
   avatarUrl,
 }) {
   const { user } = useAuth();
-  
+
   // Use auth user data if available, otherwise use props
-  const displayName = name || user?.displayName || user?.email?.split('@')[0] || "User";
-  const displayAvatar = avatarUrl || user?.photoURL || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop";
+  const displayName =
+    name || user?.displayName || user?.email?.split("@")[0] || "User";
+  const displayAvatar =
+    avatarUrl ||
+    user?.photoURL ||
+    "https://media.istockphoto.com/id/1208175274/vector/avatar-vector-icon-simple-element-illustrationavatar-vector-icon-material-concept-vector.jpg?s=612x612&w=0&k=20&c=t4aK_TKnYaGQcPAC5Zyh46qqAtuoPcb-mjtQax3_9Xc=";
   return (
     <aside className="w-full max-w-xs bg-white rounded-lg shadow-sm border border-gray-100 p-6">
       {/* Avatar */}
@@ -28,7 +32,9 @@ export default function UserProfileCard({
         </div>
 
         {/* Name */}
-        <h3 className="mt-4 text-xl font-semibold text-gray-900">{displayName}</h3>
+        <h3 className="mt-4 text-xl font-semibold text-gray-900">
+          {displayName}
+        </h3>
 
         {/* Role */}
         <p className="mt-1 text-gray-500">{role}</p>

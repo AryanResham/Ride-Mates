@@ -19,6 +19,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3500;
 
+// Debug: Check if environment variables are loaded
+console.log('Environment variables loaded:');
+console.log('PORT:', process.env.PORT);
+console.log('DATABASE_URI:', process.env.DATABASE_URI ? 'Found' : 'Not found');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
 connectDB(process.env.DATABASE_URI);
 
 app.use(cors(corsOptions));
@@ -43,4 +49,8 @@ app.use('/api/user', userRouter);
 mongoose.connection.once('open', () => {
   console.log('Connected to MongoDB');
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err);
 });

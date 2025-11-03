@@ -9,7 +9,7 @@ function FilterButton({ label, active, onClick, count }) {
       }`}
     >
       {label}
-      {count && (
+      {count != null && Number(count) > 0 && (
         <span className="ml-2 px-2 py-1 rounded-full bg-gray-200 text-xs">
           {count}
         </span>
