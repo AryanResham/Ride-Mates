@@ -12,10 +12,34 @@ export default function ProfileTab() {
     car: "Honda Civic",
   });
   const [editing, setEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const onChange = (e) => {
     const { name, value } = e.target;
     setProfile((p) => ({ ...p, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      // Here you would typically make an API call to save the profile
+      // await updateProfile(profile);
+
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      setSuccess("Profile updated successfully!");
+      setEditing(false);
+    } catch (err) {
+      setError("Failed to update profile. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,14 +81,26 @@ export default function ProfileTab() {
             </button>
           ) : (
             <button
-              onClick={() => setEditing(false)}
-              className="px-3 py-2 rounded-lg bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-300 flex items-center gap-2"
+              onClick={handleSave}
+              disabled={loading}
+              className="px-3 py-2 rounded-lg bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-300 disabled:bg-gray-300 flex items-center gap-2"
             >
               <Save className="h-4 w-4" />
-              Save
+              {loading ? "Saving..." : "Save"}
             </button>
           )}
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm">
+            {success}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="Full Name">

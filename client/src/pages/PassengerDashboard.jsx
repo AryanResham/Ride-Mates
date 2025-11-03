@@ -9,7 +9,7 @@ import MyBookingsTab from "../components/dashboard/MyBookingsTab";
 import ProfileTab from "../components/dashboard/ProfileTab";
 
 function PassengerDashboard({ setMode, currentMode }) {
-  const [activeTab, setActiveTab] = useState("history");
+  const [activeTab, setActiveTab] = useState("find rides");
   const tabLabels = ["Find Rides", "My Bookings", "History", "Profile"];
   return (
     <div className="font-display bg-[#FAFAFA] w-full min-h-screen">

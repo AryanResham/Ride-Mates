@@ -126,7 +126,7 @@ const searchRides = async (req, res) => {
         })
             .populate('driver', 'name email phone avatar rating')
             .sort({ departureDateTime: 1 });
-
+        console.log('Found rides:', rides);
         res.status(200).json(rides);
 
     } catch (error) {

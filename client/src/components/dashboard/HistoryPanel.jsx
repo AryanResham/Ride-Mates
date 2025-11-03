@@ -6,6 +6,8 @@ export default function HistoryPanel() {
   const [activeTab, setActiveTab] = useState("history");
   const [filter, setFilter] = useState("all");
   const [dateRange, setDateRange] = useState("all");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const [rideHistory] = useState([
     // {
@@ -152,6 +154,12 @@ export default function HistoryPanel() {
               </div>
             </div>
 
+            {error && (
+              <div className="mb-6 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-4 mb-6">
               <div className="flex gap-2">
@@ -186,11 +194,30 @@ export default function HistoryPanel() {
             </div>
 
             {/* History List */}
-            <div className="space-y-4">
-              {filteredHistory.map((ride) => (
-                <HistoryCard key={ride.id} ride={ride} />
-              ))}
-            </div>
+            {loading ? (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 mx-auto"></div>
+                <p className="mt-2 text-gray-600">
+                  Loading your ride history...
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredHistory.length === 0 ? (
+                  <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
+                    <p className="text-gray-500">
+                      {filter === "all"
+                        ? "You haven't taken any rides yet."
+                        : `No ${filter} rides found.`}
+                    </p>
+                  </div>
+                ) : (
+                  filteredHistory.map((ride) => (
+                    <HistoryCard key={ride.id} ride={ride} />
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </section>
       </div>
