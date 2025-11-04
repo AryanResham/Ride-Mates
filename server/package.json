@@ -7,8 +7,9 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
+    "build": "echo \"No build step for this project\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js",
+    "start": "node index.js",
     "dev": "nodemon index.js"
   },
   "dependencies": {
