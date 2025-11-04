@@ -1,39 +1,71 @@
-import { useState } from "react";
-import { Calendar, Clock, MapPin, Star, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Calendar, Clock, MapPin, Star, X, MessageSquare } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { MoveRight } from "lucide-react";
 
 export default function MyBookingsTab() {
+  const { getIdToken } = useAuth();
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [bookings, setBookings] = useState([
-    // {
-    //   id: 11,
-    //   from: "Downtown",
-    //   to: "Airport",
-    //   date: "2024-01-15",
-    //   time: "14:30",
-    //   price: 25,
-    //   seats: 1,
-    //   status: "upcoming",
-    //   driver: { name: "John Smith", rating: 4.8 },
-    // },
-    // {
-    //   id: 12,
-    //   from: "University",
-    //   to: "Mall",
-    //   date: "2024-01-16",
-    //   time: "10:00",
-    //   price: 15,
-    //   seats: 1,
-    //   status: "completed",
-    //   driver: { name: "Emily Clark", rating: 4.7 },
-    // },
-  ]);
+  const [requests, setRequests] = useState([]);
 
-  const filtered = filterBookings(bookings, filter);
+  // Fetch requests on component mount
+  useEffect(() => {
+    fetchRequests();
+  }, []);
 
-  const cancelBooking = (id) =>
-    setBookings((list) => cancelBookingInList(list, id));
+  const fetchRequests = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const token = await getIdToken();
+      const response = await fetch("/api/rider/requests", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || "Failed to fetch requests");
+      }
+
+      const data = await response.json();
+      setRequests(data || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filtered = filterRequests(requests, filter);
+
+  const cancelRequest = async (id, reason = "Cancelled by passenger") => {
+    try {
+      const token = await getIdToken();
+      const response = await fetch(`/api/rider/requests/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || "Failed to cancel request");
+      }
+
+      // Refresh requests
+      fetchRequests();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   return (
     <div className="max-w-6xl w-full mx-auto">
@@ -41,9 +73,9 @@ export default function MyBookingsTab() {
       <div className="mb-4 flex gap-2">
         {[
           { key: "all", label: "All" },
-          { key: "upcoming", label: "Upcoming" },
-          { key: "completed", label: "Completed" },
-          { key: "cancelled", label: "Cancelled" },
+          { key: "pending", label: "Pending" },
+          { key: "accepted", label: "Accepted" },
+          { key: "declined", label: "Declined" },
         ].map((t) => (
           <button
             key={t.key}
@@ -68,7 +100,7 @@ export default function MyBookingsTab() {
       {loading ? (
         <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading your bookings...</p>
+          <p className="mt-2 text-gray-600">Loading your requests...</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -76,87 +108,132 @@ export default function MyBookingsTab() {
             <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
               <p className="text-gray-500">
                 {filter === "all"
-                  ? "You haven't made any bookings yet."
-                  : `No ${filter} bookings found.`}
+                  ? "You haven't made any requests yet."
+                  : `No ${filter} requests found.`}
               </p>
             </div>
           ) : (
-            filtered.map((b) => (
+            filtered.map((r) => (
               <div
-                key={b.id}
+                key={r._id}
                 className="bg-white border border-gray-200 rounded-xl p-5"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-gray-900 font-semibold">
-                      {b.from} → {b.to}
-                    </h3>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-gray-900 font-semibold capitalize">
+                        {trimLocation(r.ride?.from || r.rideInfo?.from)}{" "}
+                        <MoveRight className="inline-block fill-black w-8 h-4" />{" "}
+                        {trimLocation(r.ride?.to || r.rideInfo?.to)}
+                      </h3>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadge(
+                          r.status
+                        )}`}
+                      >
+                        {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                      </span>
+                    </div>
+
                     <div className="mt-1 flex items-center gap-4 text-sm text-gray-500">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        {b.date}
+                        {new Date(
+                          r.ride?.date || r.rideInfo?.date
+                        ).toLocaleDateString()}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        {b.time}
+                        {r.ride?.time || r.rideInfo?.time}
                       </span>
                       <span className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        {b.seats} seat{b.seats > 1 ? "s" : ""}
+                        {r.seatsRequested} seat{r.seatsRequested > 1 ? "s" : ""}
                       </span>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-bold text-gray-900">
-                      {formatPrice(b.price)}
+                      $
+                      {(
+                        (r.ride?.pricePerSeat ||
+                          r.rideInfo?.pricePerSeat ||
+                          0) * r.seatsRequested
+                      ).toFixed(2)}
                     </p>
-                    <p className="text-xs text-gray-500">per person</p>
+                    <p className="text-xs text-gray-500">estimated total</p>
                   </div>
                 </div>
 
                 <div className="mt-4 flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-gray-200" />
+                    <img
+                      src={r.driver?.avatar || "/default-avatar.png"}
+                      alt={r.driver?.name || "Driver"}
+                      className="h-10 w-10 rounded-full bg-gray-200 object-cover"
+                    />
                     <div>
                       <p className="font-medium text-gray-900">
-                        {b.driver.name}
+                        {r.driver?.name || "Driver"}
                       </p>
                       <p className="text-xs text-gray-500 flex items-center gap-1">
                         <Star className="h-3 w-3 text-yellow-500" />
-                        {b.driver.rating}
+                        {r.driver?.rating?.average?.toFixed(1) || "New"}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {b.status === "upcoming" ? (
-                      <>
-                        <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
-                          Message
-                        </button>
-                        <button
-                          onClick={() => cancelBooking(b.id)}
-                          className="px-3 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-1"
-                        >
-                          <X className="h-4 w-4" />
-                          Cancel
-                        </button>
-                        <button className="px-3 py-2 rounded-lg bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-300">
-                          Reschedule
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50">
-                          Receipt
-                        </button>
-                        <button className="px-3 py-2 rounded-lg bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-300">
-                          Book Again
-                        </button>
-                      </>
+                    {r.status === "pending" && (
+                      <button
+                        onClick={() => cancelRequest(r._id)}
+                        className="px-3 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 flex items-center gap-1"
+                      >
+                        <X className="h-4 w-4" />
+                        Cancel Request
+                      </button>
+                    )}
+
+                    {r.status === "accepted" && (
+                      <div className="text-right">
+                        <p className="text-sm text-green-600 font-medium">
+                          ✓ Request Accepted
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Your ride is confirmed!
+                        </p>
+                      </div>
+                    )}
+
+                    {r.status === "declined" && (
+                      <div className="text-right">
+                        <p className="text-sm text-red-600 font-medium">
+                          ✗ Request Declined
+                        </p>
+                        {r.driverResponse && (
+                          <p className="text-xs text-gray-500">
+                            "{r.driverResponse}"
+                          </p>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
+
+                {/* Message Display */}
+                {r.message && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-start gap-2 text-sm">
+                      <MessageSquare className="h-4 w-4 text-blue-600 mt-0.5" />
+                      <div>
+                        <span className="font-medium text-blue-900">
+                          Your Message:{" "}
+                        </span>
+                        <span className="text-blue-800">"{r.message}"</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -166,14 +243,21 @@ export default function MyBookingsTab() {
   );
 }
 
-function formatPrice(n) {
-  return `$${Number(n).toString()}`;
-}
-function filterBookings(list, key) {
-  if (key === "all") return list;
-  return list.filter((b) => b.status === key);
-}
+const trimLocation = (location) => {
+  if (!location) return "";
+  return location.split(",")[0].trim();
+};
 
-function cancelBookingInList(list, id) {
-  return list.filter((b) => b.id !== id);
+const getStatusBadge = (status) => {
+  const statusStyles = {
+    pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    accepted: "bg-green-100 text-green-800 border-green-200",
+    declined: "bg-red-100 text-red-800 border-red-200",
+  };
+  return statusStyles[status] || statusStyles.pending;
+};
+
+function filterRequests(list, key) {
+  if (key === "all") return list;
+  return list.filter((r) => r.status === key);
 }

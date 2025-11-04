@@ -3,6 +3,7 @@ import { MessageSquare, MoveRight, Phone, Star } from "lucide-react";
 import { Field, Input } from "../ui/FormUi";
 import Geocoder from "../ui/Geocoder";
 import { useAuth } from "../../contexts/AuthContext";
+import BookingModal from "../ui/BookingModal";
 
 export default function FindRidesTab() {
   const { getIdToken } = useAuth();
@@ -12,6 +13,8 @@ export default function FindRidesTab() {
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedRide, setSelectedRide] = useState(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -64,6 +67,16 @@ export default function FindRidesTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBookRide = (ride) => {
+    setSelectedRide(ride);
+    setIsBookingModalOpen(true);
+  };
+
+  const handleCloseBookingModal = () => {
+    setIsBookingModalOpen(false);
+    setSelectedRide(null);
   };
 
   return (
@@ -144,14 +157,24 @@ export default function FindRidesTab() {
           </div>
         )}
         {rides.map((ride) => (
-          <RideResultCard key={ride._id} ride={ride} />
+          <RideResultCard
+            key={ride._id}
+            ride={ride}
+            onBookRide={handleBookRide}
+          />
         ))}
       </section>
+
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={handleCloseBookingModal}
+        ride={selectedRide}
+      />
     </div>
   );
 }
 
-function RideResultCard({ ride }) {
+function RideResultCard({ ride, onBookRide }) {
   // Helper function to trim location names to show only text before first comma
   const trimLocation = (location) => {
     if (!location) return "";
@@ -205,7 +228,10 @@ function RideResultCard({ ride }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-2 rounded-lg bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-300">
+            <button
+              onClick={() => onBookRide(ride)}
+              className="px-3 py-2 rounded-lg bg-yellow-400 text-gray-900 font-medium hover:bg-yellow-300"
+            >
               Book This Ride
             </button>
             <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center gap-1 text-sm">

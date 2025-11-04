@@ -38,7 +38,7 @@ export default function Modal({ open, onClose, children, labelledBy }) {
       {/* Modal panel */}
       <div
         ref={panelRef}
-        className="relative z-[101] w-full max-w-md mx-4"
+        className="relative z-[101] w-fit mx-4 m-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {children}

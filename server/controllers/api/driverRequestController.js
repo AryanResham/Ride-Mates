@@ -15,7 +15,7 @@ const getDriverRequests = async (req, res) => {
             return res.status(403).json({ message: 'User is not a driver.' });
         }
 
-        const requests = await Request.find({ driver: user._id, status: 'pending' })
+        const requests = await Request.find({ driver: user._id })
             .populate('ride', 'from to date time pricePerSeat vehicle availableSeats status')
             .populate('passenger', 'name email phone avatar rating')
             .sort({ createdAt: -1 });
@@ -58,6 +58,9 @@ const acceptRequest = async (req, res) => {
 
         await request.accept(driverResponse || 'Request accepted');
 
+        // Generate a unique booking ID
+        const bookingId = `BK${Date.now()}${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
         const booking = new Booking({
             ride: request.ride._id,
             passenger: request.passenger._id,
@@ -65,6 +68,7 @@ const acceptRequest = async (req, res) => {
             seatsBooked: request.seatsRequested,
             pricePerSeat: request.ride.pricePerSeat,
             totalPrice: request.ride.pricePerSeat * request.seatsRequested,
+            bookingId: bookingId,
             status: 'confirmed',
             rideDetails: {
                 from: request.ride.from,

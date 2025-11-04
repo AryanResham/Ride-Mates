@@ -10,7 +10,7 @@ import ProfileTab from "../components/dashboard/ProfileTab";
 
 function PassengerDashboard({ setMode, currentMode }) {
   const [activeTab, setActiveTab] = useState("find rides");
-  const tabLabels = ["Find Rides", "My Bookings", "History", "Profile"];
+  const tabLabels = ["Find Rides", "My Requests", "History", "Profile"];
   return (
     <div className="font-display bg-[#FAFAFA] w-full min-h-screen">
       <DashboardHeader setMode={setMode} currentMode={currentMode} />
@@ -24,7 +24,7 @@ function PassengerDashboard({ setMode, currentMode }) {
           />
           {activeTab === "history" && <HistoryPanel />}
           {activeTab === "find rides" && <FindRidesTab />}
-          {activeTab === "my bookings" && <MyBookingsTab />}
+          {activeTab === "my requests" && <MyBookingsTab />}
           {activeTab === "profile" && <ProfileTab />}
         </div>
       </div>

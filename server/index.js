@@ -12,7 +12,9 @@ import driverRidesRouter from './routes/api/driverRides.js';
 import riderRidesRouter from './routes/api/riderRides.js';
 import riderRequestsRouter from './routes/api/riderRequests.js';
 import driverRequestRouter from './routes/api/driverRequest.js';
+import driverBookingsRouter from './routes/api/driverBookings.js';
 import userRouter from './routes/api/user.js';
+import bookingsRouter from './routes/api/bookings.js';
 
 dotenv.config();
 
@@ -43,7 +45,9 @@ app.use('/api/driver/rides', driverRidesRouter);
 app.use('/api/rider/rides', riderRidesRouter);
 app.use('/api/rider/requests', riderRequestsRouter);
 app.use('/api/driver/requests', driverRequestRouter);
+app.use('/api/driver/bookings', driverBookingsRouter);
 app.use('/api/user', userRouter);
+app.use('/api/bookings', bookingsRouter);
 
 // RUN
 mongoose.connection.once('open', () => {
