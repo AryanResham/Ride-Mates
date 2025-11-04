@@ -158,4 +158,4 @@ sketch
 
 /server/.env
 /client/.env
-/server/config/serviceAccountKey.json
+/server/serviceAccountKey.json

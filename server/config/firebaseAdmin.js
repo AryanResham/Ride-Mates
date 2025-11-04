@@ -1,18 +1,16 @@
 import admin from 'firebase-admin';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-// Construct path to the key file in an ES module environment
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const serviceAccountPath = path.join(__dirname, 'serviceAccountKey.json');
+// Load environment variables
+dotenv.config();
 
-const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS is not set");
+}
 
 if (!admin.apps.length) {
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
+    credential: admin.credential.cert(process.env.GOOGLE_APPLICATION_CREDENTIALS)
   });
 }
 
