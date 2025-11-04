@@ -1,65 +1,111 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import FilterButton from "../ui/FilterButton";
 import RequestCard from "../ui/RequestCard";
 
 export default function Requests() {
+  const { getIdToken } = useAuth();
   const [filter, setFilter] = useState("pending");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [requests, setRequests] = useState([]);
 
-  const requests = [
-    // {
-    //   id: 1,
-    //   passengerName: "Sarah Johnson",
-    //   passengerRating: 4.8,
-    //   rideFrom: "Mumbai Central",
-    //   rideTo: "Pune",
-    //   rideDate: "Dec 29, 2:00 PM",
-    //   seatsRequested: 2,
-    //   message: "Hi! Can we make a quick stop at a petrol station?",
-    //   status: "pending",
-    // },
-    // {
-    //   id: 2,
-    //   passengerName: "Raj Patel",
-    //   passengerRating: 4.9,
-    //   rideFrom: "Mumbai Central",
-    //   rideTo: "Pune",
-    //   rideDate: "Dec 29, 2:00 PM",
-    //   seatsRequested: 1,
-    //   message: "Looking forward to the trip!",
-    //   status: "pending",
-    // },
-    // {
-    //   id: 3,
-    //   passengerName: "Priya Sharma",
-    //   passengerRating: 4.7,
-    //   rideFrom: "Andheri",
-    //   rideTo: "Bandra",
-    //   rideDate: "Dec 28, 9:30 AM",
-    //   seatsRequested: 1,
-    //   message: "",
-    //   status: "accepted",
-    // },
-  ];
+  useEffect(() => {
+    fetchRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchRequests = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const token = await getIdToken();
+      const res = await fetch("/api/driver/requests", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.message || "Failed to fetch requests");
+      }
+      const data = await res.json();
+      setRequests(data || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAcceptRequest = async (requestId, driverResponse) => {
+    try {
+      const token = await getIdToken();
+      const res = await fetch(`/api/driver/requests/${requestId}/accept`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ driverResponse }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.message || "Failed to accept request");
+      }
+      await fetchRequests();
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  const handleDeclineRequest = async (requestId, driverResponse) => {
+    try {
+      const token = await getIdToken();
+      const res = await fetch(`/api/driver/requests/${requestId}/decline`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ driverResponse }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.message || "Failed to decline request");
+      }
+      await fetchRequests();
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
 
   const filteredRequests =
     filter === "all"
       ? requests
       : requests.filter((req) => req.status === filter);
 
+  const pendingCount = requests.filter((r) => r.status === "pending").length;
+  const acceptedCount = requests.filter((r) => r.status === "accepted").length;
+
   return (
-    <div className="space-y-6">
-      {/* Filter Tabs */}
-      <div className="flex gap-2">
+    <div className="max-w-6xl w-full mx-auto">
+      <div className="mb-4 flex gap-2">
         <FilterButton
-          label="Pending"
+          label={`Pending (${pendingCount})`}
           active={filter === "pending"}
           onClick={() => setFilter("pending")}
-          count={requests.filter((r) => r.status === "pending").length}
+          count={pendingCount}
         />
         <FilterButton
-          label="Accepted"
+          label={`Accepted (${acceptedCount})`}
           active={filter === "accepted"}
           onClick={() => setFilter("accepted")}
+        />
+        <FilterButton
+          label="Declined"
+          active={filter === "declined"}
+          onClick={() => setFilter("declined")}
         />
         <FilterButton
           label="All"
@@ -68,12 +114,39 @@ export default function Requests() {
         />
       </div>
 
-      {/* Requests List */}
-      <div className="space-y-4">
-        {filteredRequests.map((request) => (
-          <RequestCard key={request.id} request={request} />
-        ))}
-      </div>
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 mx-auto" />
+          <p className="mt-2 text-gray-600">Loading requests...</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredRequests.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
+              <p className="text-gray-500">
+                {filter === "all"
+                  ? "No ride requests found."
+                  : `No ${filter} requests found.`}
+              </p>
+            </div>
+          ) : (
+            filteredRequests.map((request) => (
+              <RequestCard
+                key={request._id}
+                request={request}
+                onAccept={handleAcceptRequest}
+                onDecline={handleDeclineRequest}
+              />
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
