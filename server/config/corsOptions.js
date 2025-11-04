@@ -1,7 +1,8 @@
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://www.ridemates.com'
+    'https://www.ridemates.com',
+    'https://ride-mates-gold.vercel.app/'
 ];
 
 const corsOptions = {
