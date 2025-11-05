@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, Clock, MapPin, Star, Receipt, Download } from "lucide-react";
-import Navbar from "./Navbar";
+import { useAuth } from "../../contexts/AuthContext";
+import api from "../../utils/api";
 
 export default function HistoryPanel() {
   const [activeTab, setActiveTab] = useState("history");
@@ -8,108 +9,51 @@ export default function HistoryPanel() {
   const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [rideHistory, setRideHistory] = useState([]);
+  const { user } = useAuth();
 
-  const [rideHistory] = useState([
-    // {
-    //   id: 1,
-    //   from: "University",
-    //   to: "Mall",
-    //   date: "2024-01-14",
-    //   time: "10:00",
-    //   driver: {
-    //     name: "Emily Clark",
-    //     rating: 4.7,
-    //     vehicle: "Toyota Camry",
-    //     avatar:
-    //       "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=256&auto=format&fit=crop",
-    //   },
-    //   duration: "25 min",
-    //   distance: "12 km",
-    //   totalPrice: 15,
-    //   seatsBooked: 1,
-    //   bookingId: "BK002",
-    //   driverRated: true,
-    //   userRating: 5,
-    // },
-    // {
-    //   id: 2,
-    //   from: "Airport",
-    //   to: "Downtown",
-    //   date: "2024-01-10",
-    //   time: "16:45",
-    //   driver: {
-    //     name: "Robert Wilson",
-    //     rating: 4.9,
-    //     vehicle: "Honda Accord",
-    //     avatar:
-    //       "https://images.unsplash.com/photo-1566492031773-4f4e44671d66?q=80&w=256&auto=format&fit=crop",
-    //   },
-    //   duration: "40 min",
-    //   distance: "28 km",
-    //   totalPrice: 35,
-    //   seatsBooked: 2,
-    //   bookingId: "BK001",
-    //   driverRated: true,
-    //   userRating: 4,
-    // },
-    // {
-    //   id: 3,
-    //   from: "Home",
-    //   to: "Office",
-    //   date: "2024-01-08",
-    //   time: "08:30",
-    //   driver: {
-    //     name: "Sarah Johnson",
-    //     rating: 4.8,
-    //     vehicle: "Tesla Model 3",
-    //     avatar:
-    //       "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=256&auto=format&fit=crop",
-    //   },
-    //   duration: "20 min",
-    //   distance: "8 km",
-    //   totalPrice: 12,
-    //   seatsBooked: 1,
-    //   bookingId: "BK003",
-    //   driverRated: false,
-    //   userRating: null,
-    // },
-    // {
-    //   id: 4,
-    //   from: "Shopping Center",
-    //   to: "Restaurant",
-    //   date: "2024-01-05",
-    //   time: "19:20",
-    //   driver: {
-    //     name: "David Brown",
-    //     rating: 4.6,
-    //     vehicle: "Hyundai Elantra",
-    //     avatar:
-    //       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&auto=format&fit=crop",
-    //   },
-    //   duration: "15 min",
-    //   distance: "6 km",
-    //   totalPrice: 8,
-    //   seatsBooked: 1,
-    //   bookingId: "BK004",
-    //   driverRated: true,
-    //   userRating: 4,
-    // },
-  ]);
+  useEffect(() => {
+    const fetchBookings = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        // Correct backend endpoint is /api/rider/bookings
+        const token = user?.accessToken || user?.token;
+        const res = await api.get("/api/rider/bookings", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setRideHistory(res.data.bookings || res.data || []);
+      } catch (err) {
+        setError(
+          err?.response?.data?.message || "Failed to fetch ride history."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (user) fetchBookings();
+  }, [user]);
 
   const filteredHistory = rideHistory.filter((ride) => {
-    if (filter === "rated" && !ride.driverRated) return false;
-    if (filter === "unrated" && ride.driverRated) return false;
+    if (filter === "rated" && !ride.ratings?.passengerRatedDriver) return false;
+    if (filter === "unrated" && ride.ratings?.passengerRatedDriver)
+      return false;
     return true;
   });
 
   const totalSpent = rideHistory.reduce(
-    (sum, ride) => sum + ride.totalPrice,
+    (sum, ride) => sum + (ride.totalPrice || 0),
     0
   );
   const totalRides = rideHistory.length;
   const averageRating = rideHistory
-    .filter((ride) => ride.userRating)
-    .reduce((sum, ride, _, arr) => sum + ride.userRating / arr.length, 0);
+    .filter((ride) => ride.ratings?.passengerRating)
+    .reduce(
+      (sum, ride, _, arr) => sum + ride.ratings.passengerRating / arr.length,
+      0
+    );
 
   return (
     <>
@@ -142,7 +86,7 @@ export default function HistoryPanel() {
               </div>
               <div className="bg-green-50 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-green-900">
-                  ${totalSpent}
+                  ₹{totalSpent}
                 </h3>
                 <p className="text-sm text-green-600">Total Spent</p>
               </div>
@@ -177,7 +121,10 @@ export default function HistoryPanel() {
                   label="Unrated"
                   active={filter === "unrated"}
                   onClick={() => setFilter("unrated")}
-                  count={rideHistory.filter((r) => !r.driverRated).length}
+                  count={
+                    rideHistory.filter((r) => !r.ratings?.passengerRatedDriver)
+                      .length
+                  }
                 />
               </div>
 
@@ -213,7 +160,7 @@ export default function HistoryPanel() {
                   </div>
                 ) : (
                   filteredHistory.map((ride) => (
-                    <HistoryCard key={ride.id} ride={ride} />
+                    <HistoryCard key={ride._id || ride.id} ride={ride} />
                   ))
                 )}
               </div>
@@ -234,25 +181,29 @@ function HistoryCard({ ride }) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {ride.from} → {ride.to}
+            {ride.rideDetails?.from.split(",")[0].charAt(0).toUpperCase() +
+              ride.rideDetails?.from.split(",")[0].slice(1)}{" "}
+            →{" "}
+            {ride.rideDetails?.to.split(",")[0].charAt(0).toUpperCase() +
+              ride.rideDetails?.to.split(",")[0].slice(1)}
           </h3>
           <div className="flex items-center gap-4 text-sm text-gray-500">
             <span className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              {ride.date}
+              {ride.rideDetails?.date.split("T")[0]}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {ride.time}
+              {ride.rideDetails?.time}
             </span>
             <span className="flex items-center gap-1">
               <MapPin className="h-4 w-4" />
-              {ride.distance} • {ride.duration}
+              {ride.rideDetails?.distance} • {ride.rideDetails?.duration}
             </span>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xl font-bold text-gray-900">${ride.totalPrice}</p>
+          <p className="text-xl font-bold text-gray-900">₹{ride.totalPrice}</p>
           <p className="text-sm text-gray-500">
             {ride.seatsBooked} seat{ride.seatsBooked > 1 ? "s" : ""}
           </p>
@@ -274,7 +225,8 @@ function HistoryCard({ ride }) {
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                <span>{ride.driver.rating}</span>
+                {console.log(ride.driver.rating)}
+                <span>{ride.driver.rating?.average || "N/A"}</span>
               </div>
               <span>•</span>
               <span>{ride.driver.vehicle}</span>
@@ -325,21 +277,22 @@ function HistoryCard({ ride }) {
             <div>
               <p className="text-gray-500">Pickup Time</p>
               <p className="font-medium">
-                {ride.date} at {ride.time}
+                {ride.rideDetails?.date.split("T")[0]} at{" "}
+                {ride.rideDetails?.time}
               </p>
             </div>
             <div>
               <p className="text-gray-500">Duration</p>
-              <p className="font-medium">{ride.duration}</p>
+              <p className="font-medium">{ride.rideDetails?.duration}</p>
             </div>
             <div>
               <p className="text-gray-500">Distance</p>
-              <p className="font-medium">{ride.distance}</p>
+              <p className="font-medium">{ride.rideDetails?.distance}</p>
             </div>
             <div>
               <p className="text-gray-500">Price per Seat</p>
               <p className="font-medium">
-                ${(ride.totalPrice / ride.seatsBooked).toFixed(2)}
+                ₹{(ride.totalPrice / ride.seatsBooked).toFixed(2)}
               </p>
             </div>
           </div>

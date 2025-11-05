@@ -92,7 +92,7 @@ export default function RequestCard({ request, onAccept, onDecline }) {
 
         <div className="text-right">
           <p className="text-xl font-bold text-gray-900">
-            $
+            ₹
             {(
               (request.ride?.pricePerSeat ||
                 request.rideInfo?.pricePerSeat ||
@@ -108,7 +108,7 @@ export default function RequestCard({ request, onAccept, onDecline }) {
         <div className="flex items-center gap-3">
           <img
             src={request.passenger?.avatar || "/default-avatar.png"}
-            alt={request.passenger?.name || "Passenger"}
+            alt={request.passenger?.name.split(" ")[0] || "Passenger"}
             className="h-10 w-10 rounded-full bg-gray-200 object-cover"
           />
           <div>

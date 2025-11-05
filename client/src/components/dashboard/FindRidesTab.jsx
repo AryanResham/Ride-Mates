@@ -201,7 +201,7 @@ function RideResultCard({ ride, onBookRide }) {
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-gray-900">
-              ${ride.pricePerSeat.toFixed(2)}
+              ₹{ride.pricePerSeat.toFixed(2)}
             </p>
             <p className="text-xs text-gray-500">per person</p>
           </div>

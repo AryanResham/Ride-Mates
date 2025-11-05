@@ -190,7 +190,7 @@ export default function BookingModal({ ride, isOpen, onClose, onSuccess }) {
           <div className="bg-gray-100 rounded-lg p-4 space-y-2">
             <div className=" border-gray-200 flex justify-between font-medium">
               <span>Total</span>
-              <span>${totalPrice.toFixed(2)}</span>
+              <span>₹{totalPrice.toFixed(2)}</span>
             </div>
           </div>
 
