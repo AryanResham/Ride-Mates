@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Calendar, Clock, MapPin, Star, X, MessageSquare } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { MoveRight } from "lucide-react";
+import api from "../../utils/api";
 
 export default function MyBookingsTab() {
   const { getIdToken } = useAuth();
@@ -21,18 +22,11 @@ export default function MyBookingsTab() {
 
     try {
       const token = await getIdToken();
-      const response = await fetch("/api/rider/requests", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await api.get("/api/rider/requests", {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to fetch requests");
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setRequests(data || []);
     } catch (err) {
       setError(err.message);
@@ -46,19 +40,10 @@ export default function MyBookingsTab() {
   const cancelRequest = async (id, reason = "Cancelled by passenger") => {
     try {
       const token = await getIdToken();
-      const response = await fetch(`/api/rider/requests/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ reason }),
+      const response = await api.delete(`/api/rider/requests/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { reason },
       });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to cancel request");
-      }
 
       // Refresh requests
       fetchRequests();

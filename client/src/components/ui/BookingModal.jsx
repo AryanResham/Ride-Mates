@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, MapPin, Calendar, Clock, Users, Star } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import Modal from "./Modal";
+import api from "../../utils/api";
 
 export default function BookingModal({ ride, isOpen, onClose, onSuccess }) {
   const { getIdToken } = useAuth();
@@ -22,25 +23,19 @@ export default function BookingModal({ ride, isOpen, onClose, onSuccess }) {
 
     try {
       const token = await getIdToken();
-      const response = await fetch("/api/rider/requests", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      const response = await api.post(
+        "/api/rider/requests",
+        {
           rideId: ride._id,
           seatsRequested,
           message:
             message.trim() ||
             `Pickup: ${pickupPoint.trim()}, Drop: ${dropPoint.trim()}`.trim(),
-        }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to create request");
-      }
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       onSuccess?.();
       onClose();

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import BookingCard from "../ui/BookingCard";
+import api from "../../utils/api";
 
 export default function BookingsTab() {
   const { getIdToken } = useAuth();
@@ -20,18 +21,11 @@ export default function BookingsTab() {
 
     try {
       const token = await getIdToken();
-      const response = await fetch("/api/driver/bookings", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await api.get("/api/driver/bookings", {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to fetch bookings");
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setBookings(data || []);
     } catch (err) {
       setError(err.message);
@@ -43,19 +37,11 @@ export default function BookingsTab() {
   const handleAcceptBooking = async (bookingId, driverResponse) => {
     try {
       const token = await getIdToken();
-      const response = await fetch(`/api/driver/bookings/${bookingId}/accept`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ driverResponse }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to accept booking");
-      }
+      const response = await api.put(
+        `/api/driver/bookings/${bookingId}/accept`,
+        { driverResponse },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       // Refresh bookings list
       fetchBookings();
@@ -68,19 +54,11 @@ export default function BookingsTab() {
   const handleRejectBooking = async (bookingId, driverResponse) => {
     try {
       const token = await getIdToken();
-      const response = await fetch(`/api/driver/bookings/${bookingId}/reject`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ driverResponse }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to reject booking");
-      }
+      const response = await api.put(
+        `/api/driver/bookings/${bookingId}/reject`,
+        { driverResponse },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       // Refresh bookings list
       fetchBookings();

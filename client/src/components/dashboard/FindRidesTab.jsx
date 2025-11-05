@@ -4,6 +4,7 @@ import { Field, Input } from "../ui/FormUi";
 import Geocoder from "../ui/Geocoder";
 import { useAuth } from "../../contexts/AuthContext";
 import BookingModal from "../ui/BookingModal";
+import api from "../../utils/api";
 
 export default function FindRidesTab() {
   const { getIdToken } = useAuth();
@@ -34,13 +35,9 @@ export default function FindRidesTab() {
       // Get the Firebase ID token
       const token = await getIdToken();
 
-      const response = await fetch("/api/rider/rides/search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Add the Bearer token
-        },
-        body: JSON.stringify({
+      const response = await api.post(
+        "/api/rider/rides/search",
+        {
           fromLocation: {
             type: "Point",
             coordinates: fromLocation.center,
@@ -51,15 +48,13 @@ export default function FindRidesTab() {
           },
           date: form.date,
           time: form.time,
-        }),
-      });
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to fetch rides");
-      }
-
-      const data = await response.json();
+      const data = response.data;
       console.log("Rides found:", data);
       setRides(data || []);
     } catch (err) {

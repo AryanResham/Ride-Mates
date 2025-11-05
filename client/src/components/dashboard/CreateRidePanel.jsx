@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import Geocoder from "../ui/Geocoder";
 import { Field, Input, Select, Textarea } from "../ui/FormUi";
+import api from "../../utils/api";
 
 export default function CreateRidePanel() {
   const { getIdToken } = useAuth();
@@ -54,19 +55,14 @@ export default function CreateRidePanel() {
         pricePerSeat: form.price,
       };
 
-      const response = await fetch("/api/driver/rides", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Add the Bearer token
-        },
-        body: JSON.stringify(rideData),
-      });
+      // Log the route being called for creating rides
+      console.log("🚗 [CREATE RIDE] Posting to route:", "/api/driver/rides");
+      console.log("📊 [CREATE RIDE] Data being sent:", rideData);
+      console.log("🕐 [CREATE RIDE] Time:", new Date().toLocaleTimeString());
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to create ride.");
-      }
+      const response = await api.post("/api/driver/rides", rideData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       setSuccess("Ride created successfully!");
       // Optionally reset form here

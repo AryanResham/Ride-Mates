@@ -12,6 +12,7 @@
   "dependencies": {
     "@mapbox/mapbox-gl-geocoder": "^5.1.2",
     "@tailwindcss/vite": "^4.1.13",
+    "axios": "^1.13.1",
     "firebase": "^12.3.0",
     "lucide-react": "^0.544.0",
     "mapbox-gl": "^3.16.0",

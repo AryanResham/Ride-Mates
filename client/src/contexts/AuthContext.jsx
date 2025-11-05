@@ -9,6 +9,7 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { auth } from "../firebase";
+import api from "../utils/api";
 
 const AuthContext = createContext();
 
@@ -31,41 +32,37 @@ export function AuthProvider({ children }) {
 
     try {
       const token = await fbUser.getIdToken();
-      const response = await fetch("/api/user/me", {
+      const response = await api.get("/api/user/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.ok) {
-        const backendUser = await response.json();
-        setProfileCompletionRequired(false);
-        return { ...fbUser, ...backendUser }; // Return merged user
-      } else if (response.status === 404) {
+      const backendUser = response.data;
+      setProfileCompletionRequired(false);
+      return { ...fbUser, ...backendUser }; // Return merged user
+    } catch (error) {
+      if (error.response?.status === 404) {
         // New social user, needs to complete profile
         setProfileCompletionRequired(true);
         return fbUser; // Return partial user for now
-      } else if (response.status === 401) {
+      } else if (error.response?.status === 401) {
         // Token invalid/expired, try refreshing
         console.warn("Token expired, attempting refresh...");
-        const freshToken = await fbUser.getIdToken(true); // Force refresh
-        const retryResponse = await fetch("/api/user/me", {
-          headers: { Authorization: `Bearer ${freshToken}` },
-        });
+        try {
+          const freshToken = await fbUser.getIdToken(true); // Force refresh
+          const retryResponse = await api.get("/api/user/me", {
+            headers: { Authorization: `Bearer ${freshToken}` },
+          });
 
-        if (retryResponse.ok) {
-          const backendUser = await retryResponse.json();
+          const backendUser = retryResponse.data;
           setProfileCompletionRequired(false);
           return { ...fbUser, ...backendUser };
-        } else {
+        } catch (retryError) {
           throw new Error("Failed to fetch user profile after token refresh.");
         }
       } else {
-        throw new Error(
-          `Failed to fetch user profile: ${response.status} ${response.statusText}`
-        );
+        console.error("Error in getBackendProfile:", error);
+        throw error;
       }
-    } catch (error) {
-      console.error("Error in getBackendProfile:", error);
-      throw error;
     }
   };
 
@@ -99,33 +96,21 @@ export function AuthProvider({ children }) {
 
       // 2. Get token and create user profile in our backend
       const token = await cred.user.getIdToken();
-      const response = await fetch("/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      const response = await api.post(
+        "/register",
+        {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           vehicle: formData.vehicle,
-        }),
-      });
-
-      if (!response.ok) {
-        let errorMessage = "Backend registration failed.";
-        try {
-          const errData = await response.json();
-          errorMessage = errData.message || errorMessage;
-        } catch (e) {
-          errorMessage = response.statusText;
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
-        throw new Error(errorMessage);
-      }
+      );
 
       // 3. Set the full user state immediately with the returned profile
-      const backendUser = await response.json();
+      const backendUser = response.data;
       setUser({ ...cred.user, ...backendUser });
       setProfileCompletionRequired(false);
       setLoading(false); // Explicitly set loading to false on success

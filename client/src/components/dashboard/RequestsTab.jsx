@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import FilterButton from "../ui/FilterButton";
 import RequestCard from "../ui/RequestCard";
+import api from "../../utils/api";
 
 export default function Requests() {
   const { getIdToken } = useAuth();
@@ -20,14 +21,10 @@ export default function Requests() {
     setError("");
     try {
       const token = await getIdToken();
-      const res = await fetch("/api/driver/requests", {
+      const res = await api.get("/api/driver/requests", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.message || "Failed to fetch requests");
-      }
-      const data = await res.json();
+      const data = res.data;
       setRequests(data || []);
     } catch (err) {
       setError(err.message);
@@ -39,18 +36,11 @@ export default function Requests() {
   const handleAcceptRequest = async (requestId, driverResponse) => {
     try {
       const token = await getIdToken();
-      const res = await fetch(`/api/driver/requests/${requestId}/accept`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ driverResponse }),
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.message || "Failed to accept request");
-      }
+      const res = await api.put(
+        `/api/driver/requests/${requestId}/accept`,
+        { driverResponse },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       await fetchRequests();
     } catch (err) {
       setError(err.message);
@@ -61,18 +51,11 @@ export default function Requests() {
   const handleDeclineRequest = async (requestId, driverResponse) => {
     try {
       const token = await getIdToken();
-      const res = await fetch(`/api/driver/requests/${requestId}/decline`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ driverResponse }),
-      });
-      if (!res.ok) {
-        const d = await res.json();
-        throw new Error(d.message || "Failed to decline request");
-      }
+      const res = await api.put(
+        `/api/driver/requests/${requestId}/decline`,
+        { driverResponse },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       await fetchRequests();
     } catch (err) {
       setError(err.message);
