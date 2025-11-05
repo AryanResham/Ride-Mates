@@ -13,11 +13,11 @@ export default function RideCard({ ride }) {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="font-semibold text-gray-900">
-              {ride.from.split(",")[0].charAt(0).toUpperCase() +
-                ride.from.split(",")[0].slice(1)}{" "}
+              {(ride.from?.split?.(",")[0]?.charAt(0)?.toUpperCase() || "") +
+                (ride.from?.split?.(",")[0]?.slice(1) || "")}{" "}
               →{" "}
-              {ride.to.split(",")[0].charAt(0).toUpperCase() +
-                ride.to.split(",")[0].slice(1)}
+              {(ride.to?.split(",")[0]?.charAt(0)?.toUpperCase() || "") +
+                (ride.to?.split(",")[0]?.slice(1) || "")}
             </h3>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${

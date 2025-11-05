@@ -4,7 +4,7 @@ import RideCard from "../ui/RideCard";
 import api from "../../utils/api";
 import { useAuth } from "../../contexts/AuthContext";
 
-export default function MyRides({ driverId }) {
+export default function MyRides() {
   const [filter, setFilter] = useState("all");
   const [rides, setRides] = useState([]);
   const { getIdToken } = useAuth();
@@ -18,7 +18,8 @@ export default function MyRides({ driverId }) {
       setRides(response.data);
     };
     fetchRides();
-  }, [getIdToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filteredRides =
     filter === "all" ? rides : rides.filter((ride) => ride.status === filter);

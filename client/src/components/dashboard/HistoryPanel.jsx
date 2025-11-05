@@ -225,7 +225,6 @@ function HistoryCard({ ride }) {
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                {console.log(ride.driver.rating)}
                 <span>{ride.driver.rating?.average || "N/A"}</span>
               </div>
               <span>•</span>
