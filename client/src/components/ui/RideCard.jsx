@@ -13,7 +13,11 @@ export default function RideCard({ ride }) {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="font-semibold text-gray-900">
-              {ride.from} → {ride.to}
+              {ride.from.split(",")[0].charAt(0).toUpperCase() +
+                ride.from.split(",")[0].slice(1)}{" "}
+              →{" "}
+              {ride.to.split(",")[0].charAt(0).toUpperCase() +
+                ride.to.split(",")[0].slice(1)}
             </h3>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -26,20 +30,22 @@ export default function RideCard({ ride }) {
           <div className="flex items-center gap-4 text-sm text-gray-500">
             <span className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              {ride.date}
+              {ride.departureDateTime.split("T")[0]}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {ride.time}
+              {ride.departureDateTime.split("T")[1].split(".")[0]}
             </span>
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              {ride.passengers}/{ride.maxSeats} seats
+              {ride.availableSeats} seats
             </span>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-lg font-bold text-gray-900">₹{ride.price}</p>
+          <p className="text-lg font-bold text-gray-900">
+            ₹{ride.pricePerSeat}
+          </p>
           <p className="text-sm text-gray-500">per seat</p>
         </div>
       </div>
