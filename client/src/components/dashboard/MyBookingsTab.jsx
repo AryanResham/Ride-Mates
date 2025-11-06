@@ -138,15 +138,14 @@ export default function MyBookingsTab() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-gray-900">
-                      $
-                      {(
-                        (r.ride?.pricePerSeat ||
-                          r.rideInfo?.pricePerSeat ||
-                          0) * r.seatsRequested
-                      ).toFixed(2)}
-                    </p>
-                    <p className="text-xs text-gray-500">estimated total</p>
+                                  <p className="text-xl font-bold text-gray-900">
+                                    ₹
+                                    {(
+                                      (r.ride?.pricePerSeat ||
+                                        r.rideInfo?.pricePerSeat ||
+                                        0) * r.seatsRequested
+                                    ).toFixed(2)}
+                                  </p>                    <p className="text-xs text-gray-500">estimated total</p>
                   </div>
                 </div>
 

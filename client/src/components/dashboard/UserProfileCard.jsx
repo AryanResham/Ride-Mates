@@ -71,7 +71,7 @@ export default function UserProfileCard({
             <IndianRupee color="#059669" />
           </span>
           <div className=" flex-col items-center gap-2 text-md font-bold text-gray-900">
-            <p className="text-sm text-gray-500">Total Earnings</p>${userTotalEarnings}
+            <p className="text-sm text-gray-500">Total Earnings</p>₹{userTotalEarnings}
           </div>
         </div>
       </div>

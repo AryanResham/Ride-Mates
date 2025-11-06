@@ -97,7 +97,7 @@ export default function BookingCard({ booking, onAccept, onReject }) {
 
         <div className="text-right">
           <p className="text-xl font-bold text-gray-900">
-            ${booking.totalPrice.toFixed(2)}
+            ₹{booking.totalPrice.toFixed(2)}
           </p>
           <p className="text-xs text-gray-500">total payment</p>
         </div>

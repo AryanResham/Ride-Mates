@@ -155,10 +155,9 @@ export default function CreateRidePanel() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Field label="Price per seat">
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 select-none">
-                      $
-                    </span>
-                    <Input
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 select-none">
+                                      ₹
+                                    </span>                    <Input
                       name="price"
                       type="number"
                       step="0.01"
