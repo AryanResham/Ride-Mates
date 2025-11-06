@@ -18,7 +18,9 @@ const getMe = async (req, res) => {
             email: user.email,
             avatar: user.avatar,
             isDriver: user.isDriver, // Use the virtual property
-            driverProfile: user.driverProfile
+            driverProfile: user.driverProfile,
+            stats: user.stats,
+            rating: user.rating,
         });
 
     } catch (err) {
@@ -27,4 +29,41 @@ const getMe = async (req, res) => {
     }
 };
 
-export { getMe };
+const updateMe = async (req, res) => {
+    const firebaseUid = req.user.uid;
+    const { name, phone, car } = req.body;
+
+    try {
+        const user = await User.findOne({ firebaseUid: firebaseUid });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found in our database.' });
+        }
+
+        user.name = name || user.name;
+        user.phone = phone || user.phone;
+
+        if (user.isDriver && car) {
+            user.driverProfile.vehicle.model = car;
+        }
+
+        const updatedUser = await user.save();
+
+        res.status(200).json({
+            id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            avatar: updatedUser.avatar,
+            isDriver: updatedUser.isDriver,
+            driverProfile: updatedUser.driverProfile,
+            stats: updatedUser.stats,
+            rating: updatedUser.rating,
+        });
+
+    } catch (err) {
+        console.error('Error updating user profile:', err);
+        res.status(500).json({ message: 'Server error while updating user profile.' });
+    }
+};
+
+export { getMe, updateMe };

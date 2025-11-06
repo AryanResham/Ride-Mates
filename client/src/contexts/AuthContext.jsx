@@ -38,7 +38,7 @@ export function AuthProvider({ children }) {
 
       const backendUser = response.data;
       setProfileCompletionRequired(false);
-      return { ...fbUser, ...backendUser }; // Return merged user
+      return { ...fbUser, ...backendUser, stats: backendUser.stats, rating: backendUser.rating }; // Return merged user
     } catch (error) {
       if (error.response?.status === 404) {
         // New social user, needs to complete profile
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
 
           const backendUser = retryResponse.data;
           setProfileCompletionRequired(false);
-          return { ...fbUser, ...backendUser };
+          return { ...fbUser, ...backendUser, stats: backendUser.stats, rating: backendUser.rating };
         } catch (retryError) {
           throw new Error("Failed to fetch user profile after token refresh.");
         }
