@@ -5,12 +5,12 @@ import UserProfileCard from "../components/dashboard/UserProfileCard";
 import CreateRidePanel from "../components/dashboard/CreateRidePanel";
 import RequestsTab from "../components/dashboard/RequestsTab";
 import MyRidesTab from "../components/dashboard/MyRidesTab";
-import OverviewTab from "../components/dashboard/OverviewTab";
+import ProfileTab from "../components/dashboard/ProfileTab";
 import Navbar from "../components/dashboard/Navbar";
 
 function DriverDashboard({ setMode, currentMode }) {
-  const [activeTab, setActiveTab] = useState("create");
-  const tabLabels = ["Overview", "My Rides", "Requests", "Create"];
+  const [activeTab, setActiveTab] = useState("my rides");
+  const tabLabels = ["My Rides", "Requests", "Create", "Profile"];
   return (
     <div className="font-display bg-[#FAFAFA] w-full min-h-screen">
       <DashboardHeader setMode={setMode} currentMode={currentMode} />
@@ -25,7 +25,7 @@ function DriverDashboard({ setMode, currentMode }) {
           {activeTab === "create" && <CreateRidePanel />}
           {activeTab === "requests" && <RequestsTab />}
           {activeTab === "my rides" && <MyRidesTab />}
-          {activeTab === "overview" && <OverviewTab />}
+          {activeTab === "profile" && <ProfileTab />}
         </div>
       </div>
     </div>
