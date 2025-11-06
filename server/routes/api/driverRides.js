@@ -1,5 +1,5 @@
 import express from 'express';
-import { createRide, getDriverRides, getRideById } from '../../controllers/api/driverRidesController.js';
+import { createRide, getDriverRides, getRideById, completeRide } from '../../controllers/api/driverRidesController.js';
 import authMiddleware from '../../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -15,5 +15,8 @@ router.get('/', getDriverRides);
 
 // Get a single ride by ID
 router.get('/:id', getRideById);
+
+// Mark a ride as completed
+router.put('/:rideId/complete', completeRide);
 
 export default router;

@@ -9,17 +9,30 @@ export default function MyRides() {
   const [rides, setRides] = useState([]);
   const { getIdToken } = useAuth();
 
+  const fetchRides = async () => {
+    const token = await getIdToken();
+    const response = await api.get("/api/driver/rides", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setRides(response.data);
+  };
+
   useEffect(() => {
-    const fetchRides = async () => {
-      const token = await getIdToken();
-      const response = await api.get("/api/driver/rides", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setRides(response.data);
-    };
     fetchRides();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleCompleteRide = async (rideId) => {
+    const token = await getIdToken();
+    await api.put(
+      `/api/driver/rides/${rideId}/complete`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    fetchRides();
+  };
 
   const filteredRides =
     filter === "all" ? rides : rides.filter((ride) => ride.status === filter);
@@ -48,7 +61,7 @@ export default function MyRides() {
       {/* Rides List */}
       <div className="space-y-4">
         {filteredRides.map((ride) => (
-          <RideCard key={ride._id} ride={ride} />
+          <RideCard key={ride._id} ride={ride} onComplete={handleCompleteRide} />
         ))}
       </div>
     </div>

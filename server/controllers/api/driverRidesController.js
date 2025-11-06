@@ -177,4 +177,41 @@ const getRideById = async (req, res) => {
     }
 };
 
-export { createRide, getDriverRides, getRideById };
+// @desc Mark a ride as completed
+// @route PUT /api/driver/rides/:rideId/complete
+// @access Private (Driver only)
+const completeRide = async (req, res) => {
+    try {
+        const { rideId } = req.params;
+        const firebaseUid = req.user.uid;
+
+        const user = await User.findOne({ firebaseUid }).exec();
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const ride = await Ride.findById(rideId);
+        if (!ride) {
+            return res.status(404).json({ message: 'Ride not found' });
+        }
+
+        if (ride.driver.toString() !== user._id.toString()) {
+            return res.status(403).json({ message: 'You are not authorized to complete this ride' });
+        }
+
+        if (ride.status !== 'upcoming') {
+            return res.status(400).json({ message: 'Only upcoming rides can be marked as completed' });
+        }
+
+        ride.status = 'completed';
+        await ride.save();
+
+        res.status(200).json({ message: 'Ride marked as completed successfully' });
+
+    } catch (error) {
+        console.error('Error completing ride:', error);
+        res.status(500).json({ message: 'Error completing ride', error: error.message });
+    }
+};
+
+export { createRide, getDriverRides, getRideById, completeRide };
