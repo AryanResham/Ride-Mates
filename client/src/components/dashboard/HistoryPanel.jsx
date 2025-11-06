@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Calendar, Clock, MapPin, Star, Download } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../utils/api";
+import RatingModal from "../ui/RatingModal";
 
 export default function HistoryPanel() {
   const [activeTab, setActiveTab] = useState("history");
@@ -11,30 +12,55 @@ export default function HistoryPanel() {
   const [error, setError] = useState("");
   const [rideHistory, setRideHistory] = useState([]);
   const { user } = useAuth();
+  const [isRatingModalOpen, setRatingModalOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+
+  const fetchBookings = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const token = user?.accessToken || user?.token;
+      const res = await api.get("/api/rider/bookings", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setRideHistory(res.data.bookings || res.data || []);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message || "Failed to fetch ride history."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        // Correct backend endpoint is /api/rider/bookings
-        const token = user?.accessToken || user?.token;
-        const res = await api.get("/api/rider/bookings", {
+    if (user) fetchBookings();
+  }, [user]);
+
+  const handleRateDriver = (booking) => {
+    setSelectedBooking(booking);
+    setRatingModalOpen(true);
+  };
+
+  const handleSubmitRating = async ({ rating, comment, bookingId }) => {
+    try {
+      const token = user?.accessToken || user?.token;
+      await api.post(
+        `/api/bookings/${bookingId}/rate`,
+        { rating, comment },
+        {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-        setRideHistory(res.data.bookings || res.data || []);
-      } catch (err) {
-        setError(
-          err?.response?.data?.message || "Failed to fetch ride history."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (user) fetchBookings();
-  }, [user]);
+        }
+      );
+      fetchBookings(); // Refetch bookings to update the UI
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to submit rating.");
+    }
+  };
 
   const filteredHistory = rideHistory.filter((ride) => {
     if (filter === "rated" && !ride.ratings?.passengerRatedDriver) return false;
@@ -160,7 +186,11 @@ export default function HistoryPanel() {
                   </div>
                 ) : (
                   filteredHistory.map((ride) => (
-                    <HistoryCard key={ride._id || ride.id} ride={ride} />
+                    <HistoryCard
+                      key={ride._id || ride.id}
+                      ride={ride}
+                      onRateDriver={handleRateDriver}
+                    />
                   ))
                 )}
               </div>
@@ -168,11 +198,19 @@ export default function HistoryPanel() {
           </div>
         </section>
       </div>
+      {isRatingModalOpen && selectedBooking && (
+        <RatingModal
+          open={isRatingModalOpen}
+          onClose={() => setRatingModalOpen(false)}
+          onSubmit={handleSubmitRating}
+          booking={selectedBooking}
+        />
+      )}
     </>
   );
 }
 
-function HistoryCard({ ride }) {
+function HistoryCard({ ride, onRateDriver }) {
   return (
     <div className="border border-gray-200 rounded-xl p-6">
       {/* Header */}
@@ -223,7 +261,7 @@ function HistoryCard({ ride }) {
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                <span>{ride.driver.rating?.average || "N/A"}</span>
+                <span>{ride.driver.rating?.average?.toFixed(1) || "N/A"}</span>
               </div>
               <span>•</span>
               <span>{ride.driver.vehicle}</span>
@@ -232,13 +270,16 @@ function HistoryCard({ ride }) {
         </div>
 
         <div className="flex items-center gap-2">
-          {ride.driverRated ? (
+          {ride.ratings?.passengerRatedDriver ? (
             <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
               <Star className="h-3 w-3 fill-current" />
-              <span>Rated {ride.userRating}/5</span>
+              <span>Rated {ride.ratings.passengerRating}/5</span>
             </div>
           ) : (
-            <button className="px-3 py-1 bg-yellow-400 text-gray-900 rounded-full text-xs font-medium hover:bg-yellow-300 transition">
+            <button
+              onClick={() => onRateDriver(ride)}
+              className="px-3 py-1 bg-yellow-400 text-gray-900 rounded-full text-xs font-medium hover:bg-yellow-300 transition"
+            >
               Rate Driver
             </button>
           )}

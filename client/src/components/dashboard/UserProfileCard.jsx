@@ -4,10 +4,6 @@ import { useAuth } from "../../contexts/AuthContext";
 export default function UserProfileCard({
   name,
   role = "Ride Mate User",
-  rating = 4.8,
-  ridesCount = 0,
-  earnings = 0,
-  completionRate = 100,
   avatarUrl,
 }) {
   const { user } = useAuth();
@@ -19,6 +15,12 @@ export default function UserProfileCard({
     avatarUrl ||
     user?.photoURL ||
     "https://media.istockphoto.com/id/1208175274/vector/avatar-vector-icon-simple-element-illustrationavatar-vector-icon-material-concept-vector.jpg?s=612x612&w=0&k=20&c=t4aK_TKnYaGQcPAC5Zyh46qqAtuoPcb-mjtQax3_9Xc=";
+
+  const userRating = user?.rating?.average || 0;
+  const userRidesCount = user?.rating?.count || 0;
+  const userTotalRidesAsDriver = user?.stats?.totalRidesAsDriver || 0;
+  const userTotalEarnings = user?.stats?.totalEarnings || 0;
+
   return (
     <aside className="w-full max-w-xs bg-white rounded-lg shadow-sm border border-gray-100 p-6">
       {/* Avatar */}
@@ -42,8 +44,8 @@ export default function UserProfileCard({
         {/* Rating */}
         <p className="mt-2 flex items-center gap-1 text-gray-700">
           <span className="text-yellow-500">★</span>
-          <span className="font-medium">{rating}</span>
-          <span className="text-gray-400">({ridesCount} rides)</span>
+          <span className="font-medium">{userRating.toFixed(1)}</span>
+          <span className="text-gray-400">({userRidesCount} ratings)</span>
         </p>
       </div>
 
@@ -58,7 +60,7 @@ export default function UserProfileCard({
           </span>
           <div className=" flex-col items-center gap-2 text-md font-bold text-gray-900">
             <p className="text-sm text-gray-500">Total Rides</p>
-            {ridesCount}
+            {userTotalRidesAsDriver}
           </div>
         </div>
 
@@ -69,7 +71,7 @@ export default function UserProfileCard({
             <IndianRupee color="#059669" />
           </span>
           <div className=" flex-col items-center gap-2 text-md font-bold text-gray-900">
-            <p className="text-sm text-gray-500">Total Earnings</p>${earnings}
+            <p className="text-sm text-gray-500">Total Earnings</p>${userTotalEarnings}
           </div>
         </div>
       </div>

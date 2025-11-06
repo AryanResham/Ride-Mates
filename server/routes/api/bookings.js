@@ -1,5 +1,5 @@
 import express from 'express';
-import { createBooking, getPassengerBookings, cancelBooking } from '../../controllers/api/bookingController.js';
+import { createBooking, getPassengerBookings, cancelBooking, rateDriver } from '../../controllers/api/bookingController.js';
 import authMiddleware from '../../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -15,5 +15,8 @@ router.get('/', getPassengerBookings);
 
 // Cancel a booking
 router.delete('/:id', cancelBooking);
+
+// Rate a driver for a booking
+router.post('/:bookingId/rate', rateDriver);
 
 export default router;
