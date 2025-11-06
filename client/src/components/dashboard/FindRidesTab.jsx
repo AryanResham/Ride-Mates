@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { MessageSquare, MoveRight, Phone, Star } from "lucide-react";
+import { MoveRight, Phone, Star, X } from "lucide-react";
 import { Field, Input } from "../ui/FormUi";
 import Geocoder from "../ui/Geocoder";
 import { useAuth } from "../../contexts/AuthContext";
 import BookingModal from "../ui/BookingModal";
 import api from "../../utils/api";
+import Modal from "../ui/Modal";
 
 export default function FindRidesTab() {
   const { getIdToken } = useAuth();
@@ -16,6 +17,8 @@ export default function FindRidesTab() {
   const [error, setError] = useState(null);
   const [selectedRide, setSelectedRide] = useState(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [selectedDriver, setSelectedDriver] = useState(null);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -72,6 +75,16 @@ export default function FindRidesTab() {
   const handleCloseBookingModal = () => {
     setIsBookingModalOpen(false);
     setSelectedRide(null);
+  };
+
+  const handleCallDriver = (driver) => {
+    setSelectedDriver(driver);
+    setIsCallModalOpen(true);
+  };
+
+  const handleCloseCallModal = () => {
+    setIsCallModalOpen(false);
+    setSelectedDriver(null);
   };
 
   return (
@@ -156,6 +169,7 @@ export default function FindRidesTab() {
             key={ride._id}
             ride={ride}
             onBookRide={handleBookRide}
+            onCallDriver={handleCallDriver}
           />
         ))}
       </section>
@@ -165,11 +179,17 @@ export default function FindRidesTab() {
         onClose={handleCloseBookingModal}
         ride={selectedRide}
       />
+
+      <CallDriverModal
+        isOpen={isCallModalOpen}
+        onClose={handleCloseCallModal}
+        driver={selectedDriver}
+      />
     </div>
   );
 }
 
-function RideResultCard({ ride, onBookRide }) {
+function RideResultCard({ ride, onBookRide, onCallDriver }) {
   // Helper function to trim location names to show only text before first comma
   const trimLocation = (location) => {
     if (!location) return "";
@@ -229,11 +249,10 @@ function RideResultCard({ ride, onBookRide }) {
             >
               Book This Ride
             </button>
-            <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center gap-1 text-sm">
-              <MessageSquare className="h-4 w-4" />
-              Message
-            </button>
-            <button className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 flex items-center gap-1 text-sm">
+            <button
+              onClick={() => onCallDriver(ride.driver)}
+              className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 hover:shadow-md transition-all transform hover:scale-105 flex items-center gap-1 text-sm"
+            >
               <Phone className="h-4 w-4" />
               Call
             </button>
@@ -241,5 +260,31 @@ function RideResultCard({ ride, onBookRide }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function CallDriverModal({ isOpen, onClose, driver }) {
+  if (!isOpen || !driver) return null;
+
+  return (
+    <Modal open={isOpen} onClose={onClose} labelledBy="call-driver-modal-title">
+      <div className="bg-white rounded-2xl p-8 w-96">
+        <div className="flex justify-end">
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
+                <X className="h-5 w-5" />
+            </button>
+        </div>
+        <div className="text-center">
+            <img src={driver.avatar || "/default-avatar.png"} alt={driver.name} className="w-24 h-24 rounded-full mx-auto mb-4" />
+          <h2 id="call-driver-modal-title" className="text-2xl font-bold text-gray-900">
+            {driver.name}
+          </h2>
+          <p className="text-3xl font-bold text-gray-800 mt-4 tracking-wider">{driver.phone}</p>
+          <button onClick={onClose} className="mt-6 px-6 py-2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300">
+            Close
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
