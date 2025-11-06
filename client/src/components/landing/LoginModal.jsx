@@ -48,7 +48,7 @@ export default function LoginModal({ open, onClose }) {
 
   return (
     <Modal open={open} onClose={onClose} labelledBy={titleId}>
-      <div className="rounded-2xl bg-white p-6 shadow-xl relative">
+      <div className="rounded-2xl bg-white p-6 shadow-xl relative w-md">
         {/* Brand mark */}
         <div className="text-sm font-semibold mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-300 ring-1 ring-yellow-400/60">
           RM
@@ -132,7 +132,10 @@ export default function LoginModal({ open, onClose }) {
               disabled={authLoading}
               className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm hover:bg-slate-50 disabled:opacity-60"
             >
-              <span className="mr-1.5" aria-hidden="true">🟢</span> Google
+              <span className="mr-1.5" aria-hidden="true">
+                🟢
+              </span>{" "}
+              Google
             </button>
             <button
               type="button"
@@ -140,7 +143,10 @@ export default function LoginModal({ open, onClose }) {
               disabled
               title="Facebook not implemented"
             >
-              <span className="mr-1.5" aria-hidden="true">📘</span> Facebook
+              <span className="mr-1.5" aria-hidden="true">
+                📘
+              </span>{" "}
+              Facebook
             </button>
           </div>
         </form>
