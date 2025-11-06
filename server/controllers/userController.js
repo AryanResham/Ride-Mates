@@ -16,6 +16,7 @@ const getMe = async (req, res) => {
             id: user._id,
             name: user.name,
             email: user.email,
+            phone: user.phone,
             avatar: user.avatar,
             isDriver: user.isDriver, // Use the virtual property
             driverProfile: user.driverProfile,
@@ -53,6 +54,7 @@ const updateMe = async (req, res) => {
             id: updatedUser._id,
             name: updatedUser.name,
             email: updatedUser.email,
+            phone: updatedUser.phone,
             avatar: updatedUser.avatar,
             isDriver: updatedUser.isDriver,
             driverProfile: updatedUser.driverProfile,
