@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, MapPin, Star, Receipt, Download } from "lucide-react";
+import { Calendar, Clock, MapPin, Star, Download } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../utils/api";
 
@@ -173,8 +173,6 @@ export default function HistoryPanel() {
 }
 
 function HistoryCard({ ride }) {
-  const [showDetails, setShowDetails] = useState(false);
-
   return (
     <div className="border border-gray-200 rounded-xl p-6">
       {/* Header */}
@@ -252,51 +250,7 @@ function HistoryCard({ ride }) {
         <span className="text-sm text-gray-500">
           Booking ID: {ride.bookingId}
         </span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="px-3 py-1 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm"
-          >
-            {showDetails ? "Hide Details" : "View Details"}
-          </button>
-          <button className="px-3 py-1 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm flex items-center gap-1">
-            <Receipt className="h-3 w-3" />
-            Receipt
-          </button>
-          <button className="px-3 py-1 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-300 transition text-sm font-medium">
-            Book Again
-          </button>
-        </div>
       </div>
-
-      {/* Expandable Details */}
-      {showDetails && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-gray-500">Pickup Time</p>
-              <p className="font-medium">
-                {ride.rideDetails?.date.split("T")[0]} at{" "}
-                {ride.rideDetails?.time}
-              </p>
-            </div>
-            <div>
-              <p className="text-gray-500">Duration</p>
-              <p className="font-medium">{ride.rideDetails?.duration}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Distance</p>
-              <p className="font-medium">{ride.rideDetails?.distance}</p>
-            </div>
-            <div>
-              <p className="text-gray-500">Price per Seat</p>
-              <p className="font-medium">
-                ₹{(ride.totalPrice / ride.seatsBooked).toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
