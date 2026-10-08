@@ -1,18 +1,17 @@
-import { Request, Ride, User } from '../../models/index.js';
 
 // @desc Create a new ride request
 // @route POST /api/rider/requests
 // @access Private (Passenger only)
 const createRequest = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { rideId, seatsRequested, message } = req.body;
-        const firebaseUid = req.user.uid;
 
         if (!rideId || !seatsRequested) {
             return res.status(400).json({ message: 'Please provide rideId and seatsRequested' });
         }
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -70,9 +69,9 @@ const createRequest = async (req, res) => {
 };
 
 const getPassengerRequests = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -91,10 +90,10 @@ const getPassengerRequests = async (req, res) => {
 };
 
 const getRequestById = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -117,10 +116,10 @@ const getRequestById = async (req, res) => {
 };
 
 const cancelRequest = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

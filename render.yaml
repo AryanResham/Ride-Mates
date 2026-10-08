@@ -1,0 +1,18 @@
+# Render Blueprint - deploys the whole app as ONE free web service.
+# Express serves the built React client and the API from the same URL.
+# Docs: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: ridemates
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URI
+        sync: false        # MongoDB Atlas connection string for real accounts (demo data is in-memory)
+      - key: JWT_SECRET
+        generateValue: true

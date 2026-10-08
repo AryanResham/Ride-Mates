@@ -36,7 +36,7 @@ export default function Requests() {
   const handleAcceptRequest = async (requestId, driverResponse) => {
     try {
       const token = await getIdToken();
-      const res = await api.put(
+      await api.put(
         `/api/driver/requests/${requestId}/accept`,
         { driverResponse },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -51,7 +51,7 @@ export default function Requests() {
   const handleDeclineRequest = async (requestId, driverResponse) => {
     try {
       const token = await getIdToken();
-      const res = await api.put(
+      await api.put(
         `/api/driver/requests/${requestId}/decline`,
         { driverResponse },
         { headers: { Authorization: `Bearer ${token}` } }

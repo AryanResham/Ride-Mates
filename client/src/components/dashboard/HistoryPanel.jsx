@@ -3,10 +3,10 @@ import { Calendar, Clock, MapPin, Star, Download } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../utils/api";
 import RatingModal from "../ui/RatingModal";
+import { shortCity } from "../../utils/cities";
 
 export default function HistoryPanel() {
-  const [activeTab, setActiveTab] = useState("history");
-  const [filter, setFilter] = useState("all");
+    const [filter, setFilter] = useState("all");
   const [dateRange, setDateRange] = useState("all");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,12 +19,7 @@ export default function HistoryPanel() {
     setLoading(true);
     setError("");
     try {
-      const token = user?.accessToken || user?.token;
-      const res = await api.get("/api/rider/bookings", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await api.get("/api/rider/bookings");
       setRideHistory(res.data.bookings || res.data || []);
     } catch (err) {
       setError(
@@ -37,6 +32,7 @@ export default function HistoryPanel() {
 
   useEffect(() => {
     if (user) fetchBookings();
+     
   }, [user]);
 
   const handleRateDriver = (booking) => {
@@ -46,16 +42,7 @@ export default function HistoryPanel() {
 
   const handleSubmitRating = async ({ rating, comment, bookingId }) => {
     try {
-      const token = user?.accessToken || user?.token;
-      await api.post(
-        `/api/bookings/${bookingId}/rate`,
-        { rating, comment },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.post(`/api/bookings/${bookingId}/rate`, { rating, comment });
       fetchBookings(); // Refetch bookings to update the UI
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to submit rating.");
@@ -63,17 +50,15 @@ export default function HistoryPanel() {
   };
 
   const filteredHistory = rideHistory.filter((ride) => {
+    if (ride.status === "cancelled" || ride.status === "rejected") return false;
     if (filter === "rated" && !ride.ratings?.passengerRatedDriver) return false;
-    if (filter === "unrated" && ride.ratings?.passengerRatedDriver)
-      return false;
+    if (filter === "unrated" && (ride.ratings?.passengerRatedDriver || ride.status !== "completed")) return false;
     return true;
   });
 
-  const totalSpent = rideHistory.reduce(
-    (sum, ride) => sum + (ride.totalPrice || 0),
-    0
-  );
-  const totalRides = rideHistory.length;
+  const completedRides = rideHistory.filter((r) => r.status === "completed");
+  const totalSpent = completedRides.reduce((sum, ride) => sum + (ride.totalPrice || 0), 0);
+  const totalRides = completedRides.length;
   const averageRating = rideHistory
     .filter((ride) => ride.ratings?.passengerRating)
     .reduce(
@@ -147,10 +132,7 @@ export default function HistoryPanel() {
                   label="Unrated"
                   active={filter === "unrated"}
                   onClick={() => setFilter("unrated")}
-                  count={
-                    rideHistory.filter((r) => !r.ratings?.passengerRatedDriver)
-                      .length
-                  }
+                  count={completedRides.filter((r) => !r.ratings?.passengerRatedDriver).length}
                 />
               </div>
 
@@ -217,16 +199,12 @@ function HistoryCard({ ride, onRateDriver }) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {ride.rideDetails?.from.split(",")[0].charAt(0).toUpperCase() +
-              ride.rideDetails?.from.split(",")[0].slice(1)}{" "}
-            →{" "}
-            {ride.rideDetails?.to.split(",")[0].charAt(0).toUpperCase() +
-              ride.rideDetails?.to.split(",")[0].slice(1)}
+            {shortCity(ride.rideDetails?.from)} → {shortCity(ride.rideDetails?.to)}
           </h3>
           <div className="flex items-center gap-4 text-sm text-gray-500">
             <span className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              {ride.rideDetails?.date.split("T")[0]}
+              {ride.rideDetails?.date ? new Date(ride.rideDetails.date).toLocaleDateString() : ""}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
@@ -234,7 +212,7 @@ function HistoryCard({ ride, onRateDriver }) {
             </span>
             <span className="flex items-center gap-1">
               <MapPin className="h-4 w-4" />
-              {ride.rideDetails?.distance} • {ride.rideDetails?.duration}
+              {ride.rideDetails?.vehicle || "Vehicle not listed"}
             </span>
           </div>
         </div>
@@ -251,26 +229,28 @@ function HistoryCard({ ride, onRateDriver }) {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden">
             <img
-              src={ride.driver.avatar}
-              alt={ride.driver.name}
+              src={ride.driver?.avatar || "/default-avatar.svg"}
+              alt={ride.driver?.name || "Driver"}
               className="w-full h-full object-cover"
             />
           </div>
           <div>
-            <p className="font-semibold text-gray-900">{ride.driver.name}</p>
+            <p className="font-semibold text-gray-900">{ride.driver?.name || "Driver"}</p>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 text-yellow-500 fill-current" />
                 <span>{ride.driver.rating?.average?.toFixed(1) || "N/A"}</span>
               </div>
               <span>•</span>
-              <span>{ride.driver.vehicle}</span>
+              <span className="capitalize">{ride.status}</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {ride.ratings?.passengerRatedDriver ? (
+          {ride.status !== "completed" ? (
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">Upcoming</span>
+          ) : ride.ratings?.passengerRatedDriver ? (
             <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
               <Star className="h-3 w-3 fill-current" />
               <span>Rated {ride.ratings.passengerRating}/5</span>
@@ -307,7 +287,7 @@ function FilterButton({ label, active, onClick, count }) {
       }`}
     >
       {label}
-      {count && (
+      {count > 0 && (
         <span className="ml-1 px-1.5 py-0.5 rounded-full bg-gray-200 text-xs">
           {count}
         </span>

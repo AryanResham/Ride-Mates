@@ -1,12 +1,11 @@
-import { Booking, Ride, User } from '../../models/index.js';
 
 // @desc Get all bookings for driver's rides
 // @route GET /api/driver/bookings
 // @access Private (Driver only)
 const getDriverBookings = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -32,12 +31,12 @@ const getDriverBookings = async (req, res) => {
 // @route PUT /api/driver/bookings/:id/accept
 // @access Private (Driver only)
 const acceptBooking = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
         const { driverResponse } = req.body;
-        const firebaseUid = req.user.uid;
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -79,12 +78,12 @@ const acceptBooking = async (req, res) => {
 // @route PUT /api/driver/bookings/:id/reject
 // @access Private (Driver only)
 const rejectBooking = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
         const { driverResponse } = req.body;
-        const firebaseUid = req.user.uid;
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -132,11 +131,11 @@ const rejectBooking = async (req, res) => {
 // @route GET /api/driver/bookings/:id
 // @access Private (Driver only)
 const getDriverBookingById = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
-        const firebaseUid = req.user.uid;
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

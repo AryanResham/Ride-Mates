@@ -157,7 +157,6 @@ const bookingSchema = new mongoose.Schema(
         // Booking ID for reference
         bookingId: {
             type: String,
-            unique: true,
             required: true,
         },
     },
@@ -172,7 +171,7 @@ const bookingSchema = new mongoose.Schema(
 bookingSchema.index({ passenger: 1, status: 1 });
 bookingSchema.index({ ride: 1, status: 1 });
 bookingSchema.index({ driver: 1, status: 1 });
-bookingSchema.index({ bookingId: 1 });
+bookingSchema.index({ bookingId: 1 }, { unique: true });
 bookingSchema.index({ createdAt: -1 });
 
 // Virtual for route display
@@ -226,6 +225,6 @@ bookingSchema.statics.getPendingCountForDriver = function (driverId) {
     return this.countDocuments({ driver: driverId, status: 'pending' });
 };
 
-const Booking = mongoose.model('Booking', bookingSchema);
+// Schema only. Models are bound to a connection in models/index.js (demo vs live database).
 
-export default Booking;
+export default bookingSchema;

@@ -1,29 +1,13 @@
-import { User } from '../models/index.js';
+import { publicUser } from '../utils/token.js';
 
 const getMe = async (req, res) => {
-    // The firebaseUid is added to the request by the authentication middleware
-    const firebaseUid = req.user.uid;
-
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
-        const user = await User.findOne({ firebaseUid: firebaseUid });
-
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found in our database.' });
         }
-
-        // Return the user profile from your database
-        res.status(200).json({
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            avatar: user.avatar,
-            isDriver: user.isDriver, // Use the virtual property
-            driverProfile: user.driverProfile,
-            stats: user.stats,
-            rating: user.rating,
-        });
-
+        res.status(200).json(publicUser(user));
     } catch (err) {
         console.error('Error fetching user profile:', err);
         res.status(500).json({ message: 'Server error while fetching user profile.' });
@@ -31,37 +15,26 @@ const getMe = async (req, res) => {
 };
 
 const updateMe = async (req, res) => {
-    const firebaseUid = req.user.uid;
-    const { name, phone, car } = req.body;
+    const { User, Ride, Booking, Request, Rating } = req.models;
+    const { name, phone, car, bio, city } = req.body;
 
     try {
-        const user = await User.findOne({ firebaseUid: firebaseUid });
-
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found in our database.' });
         }
 
         user.name = name || user.name;
         user.phone = phone || user.phone;
+        if (typeof bio === 'string') user.bio = bio;
+        if (typeof city === 'string') user.city = city;
 
         if (user.isDriver && car) {
             user.driverProfile.vehicle.model = car;
         }
 
         const updatedUser = await user.save();
-
-        res.status(200).json({
-            id: updatedUser._id,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            phone: updatedUser.phone,
-            avatar: updatedUser.avatar,
-            isDriver: updatedUser.isDriver,
-            driverProfile: updatedUser.driverProfile,
-            stats: updatedUser.stats,
-            rating: updatedUser.rating,
-        });
-
+        res.status(200).json(publicUser(updatedUser));
     } catch (err) {
         console.error('Error updating user profile:', err);
         res.status(500).json({ message: 'Server error while updating user profile.' });

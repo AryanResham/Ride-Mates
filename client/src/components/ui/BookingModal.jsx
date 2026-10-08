@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { X, MapPin, Calendar, Clock, Users, Star } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
+import { X, MapPin, Calendar, Clock, Star } from "lucide-react";
 import Modal from "./Modal";
 import api from "../../utils/api";
 
 export default function BookingModal({ ride, isOpen, onClose, onSuccess }) {
-  const { getIdToken } = useAuth();
   const [seatsRequested, setSeatsRequested] = useState(1);
   const [message, setMessage] = useState("");
   const [pickupPoint, setPickupPoint] = useState("");
@@ -22,20 +20,17 @@ export default function BookingModal({ ride, isOpen, onClose, onSuccess }) {
     setError("");
 
     try {
-      const token = await getIdToken();
-      const response = await api.post(
-        "/api/rider/requests",
-        {
-          rideId: ride._id,
-          seatsRequested,
-          message:
-            message.trim() ||
-            `Pickup: ${pickupPoint.trim()}, Drop: ${dropPoint.trim()}`.trim(),
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const extras = [
+        pickupPoint.trim() && `Pickup: ${pickupPoint.trim()}`,
+        dropPoint.trim() && `Drop: ${dropPoint.trim()}`,
+      ]
+        .filter(Boolean)
+        .join(", ");
+      await api.post("/api/rider/requests", {
+        rideId: ride._id,
+        seatsRequested,
+        message: [message.trim(), extras].filter(Boolean).join(" - "),
+      });
 
       onSuccess?.();
       onClose();
@@ -53,7 +48,7 @@ export default function BookingModal({ ride, isOpen, onClose, onSuccess }) {
 
   return (
     <Modal open={isOpen} onClose={onClose} labelledBy="booking-modal-title">
-      <div className="bg-white rounded-xl min-w-2xl">
+      <div className="bg-white rounded-xl w-[min(42rem,94vw)]">
         {/* Header */}
         <div className="flex items-center justify-between p-3 px-5 border-b border-gray-200">
           <h2
@@ -101,7 +96,7 @@ export default function BookingModal({ ride, isOpen, onClose, onSuccess }) {
               <h3 className="font-medium text-gray-900 mb-2">Driver</h3>
               <div className="flex items-center gap-3">
                 <img
-                  src={ride.driver?.avatar || "/default-avatar.png"}
+                  src={ride.driver?.avatar || "/default-avatar.svg"}
                   alt={ride.driver?.name || "Driver"}
                   className="h-10 w-10 rounded-full bg-gray-200 object-cover"
                 />

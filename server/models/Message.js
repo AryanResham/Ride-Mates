@@ -206,6 +206,6 @@ messageSchema.statics.getUserConversations = async function (userId) {
     return result;
 };
 
-const Message = mongoose.model('Message', messageSchema);
+// Schema only. Models are bound to a connection in models/index.js (demo vs live database).
 
-export default Message;
+export default messageSchema;

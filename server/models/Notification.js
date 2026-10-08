@@ -203,6 +203,6 @@ notificationSchema.statics.createBookingRequest = function (driverId, booking, p
     });
 };
 
-const Notification = mongoose.model('Notification', notificationSchema);
+// Schema only. Models are bound to a connection in models/index.js (demo vs live database).
 
-export default Notification;
+export default notificationSchema;

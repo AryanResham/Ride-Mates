@@ -1,4 +1,3 @@
-import React from "react";
 import { useState } from "react";
 import HistoryPanel from "../components/dashboard/HistoryPanel";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -14,16 +13,12 @@ function PassengerDashboard({ setMode, currentMode }) {
   return (
     <div className="font-display bg-[#FAFAFA] w-full min-h-screen">
       <DashboardHeader setMode={setMode} currentMode={currentMode} />
-      <div className="flex justify-center mt-4 mx-auto w-6xl gap-4 px-6">
-        <UserProfileCard />
-        <div className="max-w-6xl w-full mx-auto space-y-6d">
-          <Navbar
-            labels={tabLabels}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
+      <div className="flex flex-col lg:flex-row items-start max-w-6xl mt-4 mx-auto gap-4 px-4 sm:px-6 pb-10">
+        <UserProfileCard view="passenger" />
+        <div className="w-full min-w-0 flex-1">
+          <Navbar labels={tabLabels} activeTab={activeTab} setActiveTab={setActiveTab} />
           {activeTab === "history" && <HistoryPanel />}
-          {activeTab === "find rides" && <FindRidesTab />}
+          {activeTab === "find rides" && <FindRidesTab onRequested={() => setActiveTab("my requests")} />}
           {activeTab === "my requests" && <MyBookingsTab />}
           {activeTab === "profile" && <ProfileTab />}
         </div>

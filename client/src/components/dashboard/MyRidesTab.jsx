@@ -60,6 +60,15 @@ export default function MyRides() {
 
       {/* Rides List */}
       <div className="space-y-4">
+        {filteredRides.length === 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6 text-center">
+            <p className="text-gray-500">
+              {filter === "all"
+                ? "You haven't created any rides yet. Use the Create tab to offer one."
+                : `No ${filter} rides.`}
+            </p>
+          </div>
+        )}
         {filteredRides.map((ride) => (
           <RideCard key={ride._id} ride={ride} onComplete={handleCompleteRide} />
         ))}

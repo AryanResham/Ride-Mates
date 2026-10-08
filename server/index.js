@@ -1,10 +1,14 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import mongoose from 'mongoose';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
-import connectDB from './config/dbConn.js';
+import { initDatabases, db } from './config/db.js';
+import { useLiveDb } from './middleware/selectDb.js';
 import corsOptions from './config/corsOptions.js';
+import { seedDemoData, DEMO_PASSWORD } from './demo/seed.js';
 import registerRouter from './routes/register.js';
 import authRouter from './routes/auth.js';
 import logoutRouter from './routes/logout.js';
@@ -16,29 +20,23 @@ import driverBookingsRouter from './routes/api/driverBookings.js';
 import riderBookingsRouter from './routes/api/riderBookings.js';
 import userRouter from './routes/api/user.js';
 import bookingsRouter from './routes/api/bookings.js';
+import demoRouter from './routes/api/demo.js';
 
 dotenv.config();
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3500;
-
-// Debug: Check if environment variables are loaded
-console.log('Environment variables loaded:');
-console.log('PORT:', process.env.PORT);
-console.log('DATABASE_URI:', process.env.DATABASE_URI ? 'Found' : 'Not found');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-
-connectDB(process.env.DATABASE_URI);
+const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(useLiveDb);
 
-
-app.get('/', (req, res) => {
-  res.send('Welcome to the Ride Mates API!');
-});
+// ---- API routes ----
+app.get('/api/health', (req, res) => res.json({ ok: true, uptime: process.uptime() }));
 app.use('/register', registerRouter);
 app.use('/auth', authRouter);
 app.use('/logout', logoutRouter);
@@ -50,13 +48,35 @@ app.use('/api/driver/bookings', driverBookingsRouter);
 app.use('/api/rider/bookings', riderBookingsRouter);
 app.use('/api/user', userRouter);
 app.use('/api/bookings', bookingsRouter);
+app.use('/api/demo', demoRouter);
 
-// RUN
-mongoose.connection.once('open', () => {
-  console.log('Connected to MongoDB');
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-});
+// ---- Static client (single deployment) ----
+// After `npm run build` at the repo root, the compiled React app lives in client/dist.
+// Express serves it here so the site and the API share one URL.
+const clientDist = path.resolve(__dirname, '../client/dist');
+if (fs.existsSync(path.join(clientDist, 'index.html'))) {
+    app.use(express.static(clientDist, { maxAge: isProduction ? '1h' : 0 }));
+    app.use((req, res, next) => {
+        if (req.method !== 'GET' || req.path.startsWith('/api') || path.extname(req.path)) return next();
+        res.sendFile(path.join(clientDist, 'index.html'));
+    });
+    console.log('Serving client from', clientDist);
+} else {
+    app.get('/', (req, res) => res.send('Ride Mates API is running. Build the client to serve the site from here.'));
+}
 
-mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
-});
+app.use((req, res) => res.status(404).json({ message: 'Not found' }));
+
+// ---- Boot ----
+const start = async () => {
+    await initDatabases({ liveUri: process.env.DATABASE_URI });
+    await seedDemoData(db.demo, { wipe: true });
+
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+        console.log(`Demo profiles live in the in-memory db. Password for all of them: "${DEMO_PASSWORD}"`);
+        if (!db.live) console.log('Real accounts disabled: set DATABASE_URI to enable sign-up and login.');
+    });
+};
+
+start();

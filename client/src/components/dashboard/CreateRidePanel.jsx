@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { useAuth } from "../../contexts/AuthContext";
 import Geocoder from "../ui/Geocoder";
 import { Field, Input, Select, Textarea } from "../ui/FormUi";
 import api from "../../utils/api";
 
-export default function CreateRidePanel() {
-  const { getIdToken } = useAuth();
+export default function CreateRidePanel({ onCreated }) {
   const [fromLocation, setFromLocation] = useState(null);
   const [toLocation, setToLocation] = useState(null);
   const [form, setForm] = useState({
@@ -36,9 +34,6 @@ export default function CreateRidePanel() {
 
     setLoading(true);
     try {
-      // Get the Firebase ID token
-      const token = await getIdToken();
-
       const rideData = {
         ...form,
         from: fromLocation.place_name,
@@ -55,17 +50,13 @@ export default function CreateRidePanel() {
         pricePerSeat: form.price,
       };
 
-      // Log the route being called for creating rides
-      console.log("🚗 [CREATE RIDE] Posting to route:", "/api/driver/rides");
-      console.log("📊 [CREATE RIDE] Data being sent:", rideData);
-      console.log("🕐 [CREATE RIDE] Time:", new Date().toLocaleTimeString());
+      await api.post("/api/driver/rides", rideData);
 
-      const response = await api.post("/api/driver/rides", rideData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      setSuccess("Ride created successfully!");
-      // Optionally reset form here
+      setSuccess("Ride created! Passengers can now find it under Find Rides.");
+      setForm({ date: "", time: "", seats: 1, price: "", notes: "" });
+      setFromLocation(null);
+      setToLocation(null);
+      if (onCreated) setTimeout(onCreated, 900);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,10 +64,6 @@ export default function CreateRidePanel() {
     }
   };
 
-  const handleDraft = () => {
-    // TODO: save draft
-    console.log("Save as draft:", form);
-  };
 
   return (
     <>
@@ -107,12 +94,14 @@ export default function CreateRidePanel() {
                 <Field label="From">
                   <Geocoder
                     onResult={setFromLocation}
-                    placeholder="Starting location"
+                    value={fromLocation}
+                    placeholder="Starting city"
                   />
                 </Field>
                 <Field label="To">
                   <Geocoder
                     onResult={setToLocation}
+                    value={toLocation}
                     placeholder="Destination"
                   />
                 </Field>
@@ -186,16 +175,10 @@ export default function CreateRidePanel() {
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                 <button
                   type="submit"
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-300 transition"
+                  disabled={loading}
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-yellow-400 text-gray-900 font-semibold hover:bg-yellow-300 transition disabled:opacity-60"
                 >
-                  + Create Ride
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDraft}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50 transition"
-                >
-                  Save as Draft
+                  {loading ? "Creating..." : "+ Create Ride"}
                 </button>
               </div>
             </form>

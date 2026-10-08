@@ -2,10 +2,27 @@ import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema(
     {
-        firebaseUid: {
+        passwordHash: {
             type: String,
-            required: true, // Firebase UID is now the primary identifier
-            unique: true,
+            required: true,
+            select: true,
+        },
+        // Demo accounts are seeded on boot and selectable from the "Try demo" page
+        isDemo: {
+            type: Boolean,
+            default: false,
+            index: true,
+        },
+        city: {
+            type: String,
+            trim: true,
+            default: '',
+        },
+        bio: {
+            type: String,
+            trim: true,
+            maxlength: 300,
+            default: '',
         },
         name: {
             type: String,
@@ -89,7 +106,7 @@ const userSchema = new mongoose.Schema(
 
 // Virtual to check if a user is a driver
 userSchema.virtual('isDriver').get(function () {
-    return this.driverProfile && this.driverProfile.vehicle && this.driverProfile.vehicle.plateNumber;
+    return Boolean(this.driverProfile && this.driverProfile.vehicle && this.driverProfile.vehicle.plateNumber);
 });
 
 // Virtual for full vehicle info
@@ -108,6 +125,6 @@ userSchema.methods.updateRating = function (newRating) {
     return this.save();
 };
 
-const User = mongoose.model('User', userSchema);
+// Schema only. Models are bound to a connection in models/index.js (demo vs live database).
 
-export default User;
+export default userSchema;

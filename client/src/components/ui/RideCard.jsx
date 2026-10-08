@@ -1,6 +1,9 @@
-import { Calendar, Clock, Users } from "lucide-react";
+import { Calendar, Clock, Users, UserCheck } from "lucide-react";
+import { shortCity } from "../../utils/cities";
 
 export default function RideCard({ ride, onComplete }) {
+  const departure = new Date(ride.departureDateTime);
+  const bookedSeats = (ride.totalSeats || 0) - (ride.availableSeats || 0);
   const statusColors = {
     upcoming: "bg-blue-100 text-blue-800",
     completed: "bg-green-100 text-green-800",
@@ -13,11 +16,7 @@ export default function RideCard({ ride, onComplete }) {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="font-semibold text-gray-900">
-              {(ride.from?.split?.(",")[0]?.charAt(0)?.toUpperCase() || "") +
-                (ride.from?.split?.(",")[0]?.slice(1) || "")}{" "}
-              →{" "}
-              {(ride.to?.split(",")[0]?.charAt(0)?.toUpperCase() || "") +
-                (ride.to?.split(",")[0]?.slice(1) || "")}
+              {shortCity(ride.from)} → {shortCity(ride.to)}
             </h3>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -27,20 +26,25 @@ export default function RideCard({ ride, onComplete }) {
               {ride.status}
             </span>
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500">
             <span className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              {ride.departureDateTime.split("T")[0]}
+              {departure.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}
             </span>
             <span className="flex items-center gap-1">
               <Clock className="h-4 w-4" />
-              {ride.departureDateTime.split("T")[1].split(".")[0]}
+              {departure.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
+            <span className="flex items-center gap-1">
+              <UserCheck className="h-4 w-4" />
+              {bookedSeats} booked
             </span>
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              {ride.availableSeats} seats
+              {ride.availableSeats} open
             </span>
           </div>
+          {ride.notes && <p className="mt-2 text-sm text-gray-500 italic">{ride.notes}</p>}
         </div>
         <div className="text-right">
           <p className="text-lg font-bold text-gray-900">

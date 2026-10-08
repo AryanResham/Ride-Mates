@@ -68,7 +68,6 @@ const requestSchema = new mongoose.Schema(
         // Expiration
         expiresAt: {
             type: Date,
-            index: true,
         },
 
         // Tracking
@@ -119,9 +118,10 @@ requestSchema.virtual('totalPrice').get(function () {
 // Pre-save hook to set expiration time
 requestSchema.pre('save', function (next) {
     if (this.isNew && !this.expiresAt && this.rideInfo && this.rideInfo.date) {
-        // Request expires 24 hours before the ride
+        // Keep the request document around until well after the ride so it stays
+        // visible in both the passenger's and driver's request history.
         const rideDate = new Date(this.rideInfo.date);
-        this.expiresAt = new Date(rideDate.getTime() - 24 * 60 * 60 * 1000);
+        this.expiresAt = new Date(rideDate.getTime() + 30 * 24 * 60 * 60 * 1000);
     }
     next();
 });
@@ -171,6 +171,6 @@ requestSchema.statics.getPendingCountForDriver = function (driverId) {
     return this.countDocuments({ driver: driverId, status: 'pending' });
 };
 
-const Request = mongoose.model('Request', requestSchema);
+// Schema only. Models are bound to a connection in models/index.js (demo vs live database).
 
-export default Request;
+export default requestSchema;

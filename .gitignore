@@ -159,3 +159,5 @@ sketch
 /server/.env
 /client/.env
 /server/serviceAccountKey.json
+client/dist
+.claude/

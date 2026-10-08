@@ -14,6 +14,7 @@ export default function MyBookingsTab() {
   // Fetch requests on component mount
   useEffect(() => {
     fetchRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchRequests = async () => {
@@ -40,7 +41,7 @@ export default function MyBookingsTab() {
   const cancelRequest = async (id, reason = "Cancelled by passenger") => {
     try {
       const token = await getIdToken();
-      const response = await api.delete(`/api/rider/requests/${id}`, {
+      await api.delete(`/api/rider/requests/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
         data: { reason },
       });
@@ -152,7 +153,7 @@ export default function MyBookingsTab() {
                 <div className="mt-4 flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <img
-                      src={r.driver?.avatar || "/default-avatar.png"}
+                      src={r.driver?.avatar || "/default-avatar.svg"}
                       alt={r.driver?.name || "Driver"}
                       className="h-10 w-10 rounded-full bg-gray-200 object-cover"
                     />

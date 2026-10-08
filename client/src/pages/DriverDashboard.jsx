@@ -1,4 +1,3 @@
-import React from "react";
 import { useState } from "react";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import UserProfileCard from "../components/dashboard/UserProfileCard";
@@ -14,15 +13,11 @@ function DriverDashboard({ setMode, currentMode }) {
   return (
     <div className="font-display bg-[#FAFAFA] w-full min-h-screen">
       <DashboardHeader setMode={setMode} currentMode={currentMode} />
-      <div className="flex justify-center mt-4 mx-auto w-6xl gap-4 px-6">
-        <UserProfileCard />
-        <div className="max-w-6xl w-full mx-auto space-y-6d">
-          <Navbar
-            labels={tabLabels}
-            setActiveTab={setActiveTab}
-            activeTab={activeTab}
-          />
-          {activeTab === "create" && <CreateRidePanel />}
+      <div className="flex flex-col lg:flex-row items-start max-w-6xl mt-4 mx-auto gap-4 px-4 sm:px-6 pb-10">
+        <UserProfileCard view="driver" />
+        <div className="w-full min-w-0 flex-1">
+          <Navbar labels={tabLabels} setActiveTab={setActiveTab} activeTab={activeTab} />
+          {activeTab === "create" && <CreateRidePanel onCreated={() => setActiveTab("my rides")} />}
           {activeTab === "requests" && <RequestsTab />}
           {activeTab === "my rides" && <MyRidesTab />}
           {activeTab === "profile" && <ProfileTab />}

@@ -1,12 +1,11 @@
-import { Request, User, Ride, Booking } from "../../models/index.js";
 
 // @desc Get all pending requests for driver's rides
 // @route GET /api/driver/requests
 // @access Private (Driver only)
 const getDriverRequests = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
@@ -29,12 +28,12 @@ const getDriverRequests = async (req, res) => {
 };
 
 const acceptRequest = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
         const { driverResponse } = req.body;
-        const firebaseUid = req.user.uid;
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
@@ -84,6 +83,7 @@ const acceptRequest = async (req, res) => {
         await request.save();
 
         await request.ride.bookSeats(request.seatsRequested);
+        await Ride.findByIdAndUpdate(request.ride._id, { $addToSet: { bookings: savedBooking._id } });
 
         await request.populate('ride', 'from to date time pricePerSeat vehicle');
         await request.populate('passenger', 'name email phone avatar');
@@ -98,12 +98,12 @@ const acceptRequest = async (req, res) => {
 };
 
 const declineRequest = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
         const { driverResponse } = req.body;
-        const firebaseUid = req.user.uid;
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
@@ -135,11 +135,11 @@ const declineRequest = async (req, res) => {
 };
 
 const markRequestAsViewed = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
-        const firebaseUid = req.user.uid;
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }

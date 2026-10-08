@@ -58,14 +58,13 @@ const rideSchema = new mongoose.Schema(
         departureDateTime: {
             type: Date,
             required: true,
-            index: true,
         },
 
         // Ride Details
         availableSeats: {
             type: Number,
             required: true,
-            min: 1,
+            min: 0,
             max: 8,
         },
         totalSeats: {
@@ -225,6 +224,6 @@ rideSchema.pre('save', function (next) {
     next();
 });
 
-const Ride = mongoose.model('Ride', rideSchema);
+// Schema only. Models are bound to a connection in models/index.js (demo vs live database).
 
-export default Ride;
+export default rideSchema;

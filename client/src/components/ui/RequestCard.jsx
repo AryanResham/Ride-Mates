@@ -107,7 +107,7 @@ export default function RequestCard({ request, onAccept, onDecline }) {
       <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
         <div className="flex items-center gap-3">
           <img
-            src={request.passenger?.avatar || "/default-avatar.png"}
+            src={request.passenger?.avatar || "/default-avatar.svg"}
             alt={request.passenger?.name.split(" ")[0] || "Passenger"}
             className="h-10 w-10 rounded-full bg-gray-200 object-cover"
           />

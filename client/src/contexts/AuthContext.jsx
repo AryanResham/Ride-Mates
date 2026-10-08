@@ -1,180 +1,145 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut as fbSignOut,
-  onAuthStateChanged,
-  signInWithPopup,
-  GoogleAuthProvider,
-  updateProfile,
-} from "firebase/auth";
-import { auth } from "../firebase";
-import api from "../utils/api";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import api, { getStoredToken, setStoredToken } from "../utils/api";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext);
 }
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [profileCompletionRequired, setProfileCompletionRequired] =
-    useState(false);
-  const [loading, setLoading] = useState(true);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [isSigningUp, setIsSigningUp] = useState(false); // Flag to prevent race condition
-  const googleProvider = new GoogleAuthProvider();
+  const [loading, setLoading] = useState(true); // initial session restore
+  const [authLoading, setAuthLoading] = useState(false); // login / signup in flight
+  const [sessionKey, setSessionKey] = useState(0); // bumps on login/switch/reset so views remount
 
-  // Fetches our backend profile and merges it with the firebase user
-  const getBackendProfile = async (fbUser) => {
-    if (!fbUser) return null;
+  const applySession = useCallback(({ token, user: profile }) => {
+    setStoredToken(token);
+    setUser(profile);
+    setSessionKey((k) => k + 1);
+    return profile;
+  }, []);
 
-    try {
-      const token = await fbUser.getIdToken();
-      const response = await api.get("/api/user/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const backendUser = response.data;
-      setProfileCompletionRequired(false);
-      return { ...fbUser, ...backendUser, stats: backendUser.stats, rating: backendUser.rating }; // Return merged user
-    } catch (error) {
-      if (error.response?.status === 404) {
-        // New social user, needs to complete profile
-        setProfileCompletionRequired(true);
-        return fbUser; // Return partial user for now
-      } else if (error.response?.status === 401) {
-        // Token invalid/expired, try refreshing
-        console.warn("Token expired, attempting refresh...");
-        try {
-          const freshToken = await fbUser.getIdToken(true); // Force refresh
-          const retryResponse = await api.get("/api/user/me", {
-            headers: { Authorization: `Bearer ${freshToken}` },
-          });
-
-          const backendUser = retryResponse.data;
-          setProfileCompletionRequired(false);
-          return { ...fbUser, ...backendUser, stats: backendUser.stats, rating: backendUser.rating };
-        } catch (retryError) {
-          throw new Error("Failed to fetch user profile after token refresh.");
-        }
-      } else {
-        console.error("Error in getBackendProfile:", error);
-        throw error;
-      }
-    }
-  };
-
+  // Restore the session from a stored token on first load.
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (isSigningUp) return; // Don't run listener during signup process
-      try {
-        const fullUser = await getBackendProfile(fbUser);
-        setUser(fullUser);
-      } catch (error) {
-        console.error(error);
-        setUser(null);
-      } finally {
+    let cancelled = false;
+    const restore = async () => {
+      const token = getStoredToken();
+      if (!token) {
         setLoading(false);
+        return;
       }
-    });
-    return unsubscribe;
-  }, [isSigningUp]); // Re-run when signup state changes
+      try {
+        const { data } = await api.get("/api/user/me");
+        if (!cancelled) setUser(data);
+      } catch {
+        setStoredToken(null);
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    restore();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  async function signup(formData) {
-    setAuthLoading(true);
-    setIsSigningUp(true); // Set the flag
-    try {
-      // 1. Create user in Firebase
-      const cred = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      await updateProfile(cred.user, { displayName: formData.name });
-
-      // 2. Get token and create user profile in our backend
-      const token = await cred.user.getIdToken();
-      const response = await api.post(
-        "/register",
-        {
+  const signup = useCallback(
+    async (formData) => {
+      setAuthLoading(true);
+      try {
+        const { data } = await api.post("/register", {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
+          password: formData.password,
           vehicle: formData.vehicle,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      // 3. Set the full user state immediately with the returned profile
-      const backendUser = response.data;
-      setUser({ ...cred.user, ...backendUser });
-      setProfileCompletionRequired(false);
-      setLoading(false); // Explicitly set loading to false on success
-    } finally {
-      setAuthLoading(false);
-      setIsSigningUp(false); // Lower the flag
-    }
-  }
-
-  async function login(email, password) {
-    setAuthLoading(true);
-    try {
-      const cred = await signInWithEmailAndPassword(auth, email, password);
-      const fullUser = await getBackendProfile(cred.user);
-      setUser(fullUser);
-    } finally {
-      setAuthLoading(false);
-    }
-  }
-
-  async function loginWithGoogle() {
-    setAuthLoading(true);
-    try {
-      const cred = await signInWithPopup(auth, googleProvider);
-      // The onAuthStateChanged listener will handle new vs existing Google users
-    } finally {
-      setAuthLoading(false);
-    }
-  }
-
-  async function signout() {
-    await fbSignOut(auth);
-    setUser(null);
-    setProfileCompletionRequired(false);
-  }
-
-  // Function to get fresh ID token for API calls
-  async function getIdToken(forceRefresh = false) {
-    if (!auth.currentUser) {
-      throw new Error("No authenticated user");
-    }
-    try {
-      return await auth.currentUser.getIdToken(forceRefresh);
-    } catch (error) {
-      console.error("Failed to get ID token:", error);
-      throw error;
-    }
-  }
-
-  const value = {
-    user, // This will be the merged user object
-    loading,
-    authLoading,
-    profileCompletionRequired,
-    signup,
-    login,
-    loginWithGoogle,
-    signout,
-    getIdToken, // Export this for use in API calls
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
+        });
+        return applySession(data);
+      } finally {
+        setAuthLoading(false);
+      }
+    },
+    [applySession]
   );
+
+  const login = useCallback(
+    async (email, password) => {
+      setAuthLoading(true);
+      try {
+        const { data } = await api.post("/auth", { email, password });
+        return applySession(data);
+      } finally {
+        setAuthLoading(false);
+      }
+    },
+    [applySession]
+  );
+
+  // Demo mode: sign in as one of the seeded profiles with no password.
+  const loginAsDemo = useCallback(
+    async (profileId) => {
+      setAuthLoading(true);
+      try {
+        const { data } = await api.post("/api/demo/login", { id: profileId });
+        return applySession(data);
+      } finally {
+        setAuthLoading(false);
+      }
+    },
+    [applySession]
+  );
+
+  // Demo mode: wipe and reseed everything, then stay signed in as the same profile.
+  const resetDemo = useCallback(async () => {
+    setAuthLoading(true);
+    try {
+      const { data } = await api.post("/api/demo/reset");
+      if (data.token && data.user) applySession(data);
+      return data;
+    } finally {
+      setAuthLoading(false);
+    }
+  }, [applySession]);
+
+  const signout = useCallback(async () => {
+    setStoredToken(null);
+    setUser(null);
+  }, []);
+
+  // Re-fetch the profile (after editing it, rating someone, etc.)
+  const refreshUser = useCallback(async () => {
+    const { data } = await api.get("/api/user/me");
+    setUser(data);
+    return data;
+  }, []);
+
+  // Kept for components that still pass the token explicitly.
+  const getIdToken = useCallback(async () => {
+    const token = getStoredToken();
+    if (!token) throw new Error("No authenticated user");
+    return token;
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      authLoading,
+      isDemo: Boolean(user?.isDemo),
+      sessionKey,
+      signup,
+      login,
+      loginAsDemo,
+      resetDemo,
+      signout,
+      refreshUser,
+      getIdToken,
+    }),
+    [user, loading, authLoading, sessionKey, signup, login, loginAsDemo, resetDemo, signout, refreshUser, getIdToken]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

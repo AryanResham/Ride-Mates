@@ -1,4 +1,3 @@
-import { Ride, User } from '../../models/index.js';
 
 function parseDateAndTime(dateStr, timeStr) {
     if (!dateStr || typeof dateStr !== 'string') throw new Error('Invalid date format');
@@ -60,10 +59,12 @@ function parseDateAndTime(dateStr, timeStr) {
 // @route GET /api/rider/rides
 // @access Private (Passenger only)
 const getRides = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const rides = await Ride.find({
             status: 'upcoming',
-            availableSeats: { $gt: 0 }
+            availableSeats: { $gt: 0 },
+            departureDateTime: { $gte: new Date() }
         })
             .populate('driver', 'name email phone avatar rating')
             .sort({ departureDateTime: 1 });
@@ -77,30 +78,41 @@ const getRides = async (req, res) => {
 };
 
 const searchRides = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { fromLocation, toLocation, date, time } = req.body;
 
-        if (!fromLocation || !toLocation || !date || !time) {
-            return res.status(400).json({ message: 'Please provide fromLocation, toLocation, date, and time parameters' });
+        if (!fromLocation || !toLocation) {
+            return res.status(400).json({ message: 'Please provide fromLocation and toLocation' });
         }
 
         if (!fromLocation.coordinates || !toLocation.coordinates || fromLocation.coordinates.length !== 2 || toLocation.coordinates.length !== 2) {
             return res.status(400).json({ message: 'Invalid location coordinates' });
         }
 
-        let departureDateTime;
-        try {
-            const parsed = parseDateAndTime(String(date), String(time));
-            departureDateTime = parsed.departure;
-        } catch (err) {
-            return res.status(400).json({ message: err.message });
+        // Date/time are optional. With a date we look at that whole day (or +/- 8h around a
+        // given time); without one we return every upcoming ride on the route.
+        let startTime = new Date();
+        let endTime = null;
+        if (date) {
+            try {
+                const parsed = parseDateAndTime(String(date), time ? String(time) : '00:00');
+                if (time) {
+                    const timeWindow = 8 * 60 * 60 * 1000;
+                    startTime = new Date(parsed.departure.getTime() - timeWindow);
+                    endTime = new Date(parsed.departure.getTime() + timeWindow);
+                } else {
+                    startTime = parsed.dateOnly;
+                    endTime = new Date(parsed.dateOnly.getTime() + 24 * 60 * 60 * 1000);
+                }
+                if (startTime < new Date()) startTime = new Date();
+            } catch (err) {
+                return res.status(400).json({ message: err.message });
+            }
         }
 
-        const timeWindow = 8 * 60 * 60 * 1000; // 8 hours
-        const startTime = new Date(departureDateTime.getTime() - timeWindow);
-        const endTime = new Date(departureDateTime.getTime() + timeWindow);
-
-        const searchRadiusMeters = 1000; // 1km
+        // City-level matching. Override with SEARCH_RADIUS_KM if you want tighter matches.
+        const searchRadiusMeters = (parseFloat(process.env.SEARCH_RADIUS_KM) || 25) * 1000;
         const searchRadiusRadians = searchRadiusMeters / 6378100;
 
         const rides = await Ride.find({
@@ -120,13 +132,12 @@ const searchRides = async (req, res) => {
                     }
                 }
             ],
-            departureDateTime: { $gte: startTime, $lte: endTime },
+            departureDateTime: endTime ? { $gte: startTime, $lte: endTime } : { $gte: startTime },
             status: 'upcoming',
             availableSeats: { $gt: 0 }
         })
             .populate('driver', 'name email phone avatar rating')
             .sort({ departureDateTime: 1 });
-        console.log('Found rides:', rides);
         res.status(200).json(rides);
 
     } catch (error) {

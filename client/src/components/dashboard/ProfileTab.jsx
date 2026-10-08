@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Pencil, Save } from "lucide-react";
-import { Field, Input, Select, Textarea } from "../ui/FormUi";
+import { Field, Input } from "../ui/FormUi";
 import { useAuth } from "../../contexts/AuthContext";
 import api from "../../utils/api";
 
 export default function ProfileTab() {
-  const { user, getIdToken } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,15 +35,11 @@ export default function ProfileTab() {
     setSuccess("");
 
     try {
-      const token = await getIdToken();
-      // Assuming you have an endpoint to update the user profile
-      await api.put("/api/user/me", profile, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      await api.put("/api/user/me", profile);
+      await refreshUser();
       setSuccess("Profile updated successfully!");
       setEditing(false);
-    } catch (err) {
+    } catch {
       setError("Failed to update profile. Please try again.");
     } finally {
       setLoading(false);

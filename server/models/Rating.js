@@ -197,6 +197,6 @@ ratingSchema.statics.getRecentForUser = function (userId, limit = 10) {
         .exec();
 };
 
-const Rating = mongoose.model('Rating', ratingSchema);
+// Schema only. Models are bound to a connection in models/index.js (demo vs live database).
 
-export default Rating;
+export default ratingSchema;

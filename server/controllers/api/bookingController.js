@@ -1,40 +1,18 @@
-import { Booking, Ride, User, Request } from '../../models/index.js';
-
-// @desc Create a new booking
-// @route POST /api/bookings
-// @access Private (Passenger only)
-const createBooking = async (req, res) => {
-    // ... (existing code)
-};
-
-// @desc Get passenger's bookings
-// @route GET /api/bookings
-// @access Private (Passenger only)
-const getPassengerBookings = async (req, res) => {
-    // ... (existing code)
-};
-
-// @desc Cancel a booking
-// @route DELETE /api/bookings/:id
-// @access Private (Passenger only)
-const cancelBooking = async (req, res) => {
-    // ... (existing code)
-};
 
 // @desc Rate a driver for a booking
 // @route POST /api/bookings/:bookingId/rate
 // @access Private (Passenger only)
 const rateDriver = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { bookingId } = req.params;
         const { rating, comment } = req.body;
-        const firebaseUid = req.user.uid;
 
         if (!rating) {
             return res.status(400).json({ message: 'Rating is required' });
         }
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -74,4 +52,4 @@ const rateDriver = async (req, res) => {
 };
 
 
-export { createBooking, getPassengerBookings, cancelBooking, rateDriver };
+export { rateDriver };

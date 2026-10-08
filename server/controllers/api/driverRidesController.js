@@ -1,4 +1,3 @@
-import { Ride, User } from '../../models/index.js';
 
 function parseDateAndTime(dateStr, timeStr) {
     if (!dateStr || typeof dateStr !== 'string') throw new Error('Invalid date format');
@@ -60,6 +59,7 @@ function parseDateAndTime(dateStr, timeStr) {
 // @route POST /api/driver/rides
 // @access Private (Driver only)
 const createRide = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const {
             from,
@@ -77,8 +77,7 @@ const createRide = async (req, res) => {
             return res.status(400).json({ message: 'All required fields must be provided.' });
         }
 
-        const firebaseUid = req.user.uid; // From authMiddleware
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
@@ -128,9 +127,9 @@ const createRide = async (req, res) => {
 };
 
 const getDriverRides = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
@@ -153,10 +152,10 @@ const getDriverRides = async (req, res) => {
 };
 
 const getRideById = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found.' });
         }
@@ -181,11 +180,11 @@ const getRideById = async (req, res) => {
 // @route PUT /api/driver/rides/:rideId/complete
 // @access Private (Driver only)
 const completeRide = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { rideId } = req.params;
-        const firebaseUid = req.user.uid;
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

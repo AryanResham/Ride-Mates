@@ -1,18 +1,17 @@
-import { Booking, Ride, User } from '../../models/index.js';
 
 // @desc Create a new instant booking
 // @route POST /api/rider/bookings
 // @access Private (Passenger only)
 const createBooking = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { rideId, seatsBooked, message } = req.body;
-        const firebaseUid = req.user.uid;
 
         if (!rideId || !seatsBooked) {
             return res.status(400).json({ message: 'Please provide rideId and seatsBooked' });
         }
 
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -86,9 +85,9 @@ const createBooking = async (req, res) => {
 // @route GET /api/rider/bookings
 // @access Private (Passenger only)
 const getPassengerBookings = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -110,10 +109,10 @@ const getPassengerBookings = async (req, res) => {
 // @route GET /api/rider/bookings/:id
 // @access Private (Passenger only)
 const getBookingById = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -138,11 +137,11 @@ const getBookingById = async (req, res) => {
 // @route DELETE /api/rider/bookings/:id
 // @access Private (Passenger only)
 const cancelBooking = async (req, res) => {
+    const { User, Ride, Booking, Request, Rating } = req.models;
     try {
         const { id } = req.params;
         const { reason } = req.body;
-        const firebaseUid = req.user.uid;
-        const user = await User.findOne({ firebaseUid }).exec();
+        const user = await User.findById(req.user.uid).exec();
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
