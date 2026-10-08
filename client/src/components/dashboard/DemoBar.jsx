@@ -44,20 +44,20 @@ export default function DemoBar() {
   };
 
   return (
-    <div className="bg-slate-900 text-slate-100">
+    <div className="bg-amber-50 border-b border-amber-200 text-slate-700">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap items-center gap-x-4 gap-y-2 py-2 text-sm">
-        <span className="inline-flex items-center gap-1.5 font-medium text-yellow-300">
+        <span className="inline-flex items-center gap-1.5 font-semibold text-amber-800">
           <Sparkles className="h-4 w-4" /> Demo mode
         </span>
 
         <label className="inline-flex items-center gap-2">
-          <span className="text-slate-400 hidden sm:inline">Viewing as</span>
+          <span className="text-slate-500 hidden sm:inline">Viewing as</span>
           <span className="relative">
             <select
               value={user?.id || ""}
               onChange={switchTo}
               disabled={authLoading}
-              className="appearance-none rounded-lg bg-slate-800 border border-slate-700 pl-3 pr-8 py-1.5 text-slate-100 focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:opacity-60"
+              className="appearance-none rounded-lg bg-white border border-amber-300 pl-3 pr-8 py-1.5 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400 disabled:opacity-60"
             >
               {profiles.length === 0 && user && (
                 <option value={user.id}>
@@ -87,24 +87,24 @@ export default function DemoBar() {
                 </optgroup>
               )}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           </span>
         </label>
 
-        {status && <span className="text-xs text-slate-300">{status}</span>}
+        {status && <span className="text-xs text-slate-600">{status}</span>}
 
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={handleReset}
             disabled={authLoading}
             title="Wipe all changes and reload the seeded demo data"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs font-medium hover:bg-slate-800 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-amber-100 disabled:opacity-60"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${authLoading ? "animate-spin" : ""}`} /> Reset data
           </button>
           <button
             onClick={signout}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-2.5 py-1.5 text-xs font-semibold text-slate-900 hover:bg-yellow-300"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-2.5 py-1.5 text-xs font-semibold text-slate-900 border border-yellow-500/60 hover:bg-yellow-300"
           >
             <LogOut className="h-3.5 w-3.5" /> Exit demo
           </button>
