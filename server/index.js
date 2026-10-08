@@ -55,14 +55,37 @@ app.use('/api/demo', demoRouter);
 // Express serves it here so the site and the API share one URL.
 const clientDist = path.resolve(__dirname, '../client/dist');
 if (fs.existsSync(path.join(clientDist, 'index.html'))) {
-    app.use(express.static(clientDist, { maxAge: isProduction ? '1h' : 0 }));
+    // Asset filenames contain a content hash, so they can be cached hard.
+    // index.html must never be cached: it is what points at the current hashes,
+    // and a stale copy would request assets that no longer exist after a deploy.
+    const sendIndex = (res) =>
+        res.sendFile(path.join(clientDist, 'index.html'), {
+            headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+        });
+
+    app.use(
+        express.static(clientDist, {
+            index: false,
+            maxAge: isProduction ? '1y' : 0,
+            setHeaders: (res, filePath) => {
+                if (filePath.endsWith('index.html')) {
+                    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+                }
+            },
+        })
+    );
     app.use((req, res, next) => {
         if (req.method !== 'GET' || req.path.startsWith('/api') || path.extname(req.path)) return next();
-        res.sendFile(path.join(clientDist, 'index.html'));
+        sendIndex(res);
     });
-    console.log('Serving client from', clientDist);
+    const assetDir = path.join(clientDist, 'assets');
+    const assets = fs.existsSync(assetDir) ? fs.readdirSync(assetDir) : [];
+    console.log(`Serving client from ${clientDist} (${assets.length} assets: ${assets.join(', ') || 'NONE'})`);
 } else {
-    app.get('/', (req, res) => res.send('Ride Mates API is running. Build the client to serve the site from here.'));
+    console.warn(`No built client at ${clientDist}. Run "npm run build" at the repo root so Express can serve the site.`);
+    app.get('/', (req, res) =>
+        res.status(503).send('Ride Mates API is running, but the site has not been built. Run "npm run build" at the repo root.')
+    );
 }
 
 app.use((req, res) => res.status(404).json({ message: 'Not found' }));
